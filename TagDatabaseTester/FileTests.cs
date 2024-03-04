@@ -8,10 +8,14 @@ using System.Text;
 using System.Threading.Tasks;
 using Xunit.Abstractions;
 using System.Diagnostics;
+using System.Reflection;
 
 namespace TagDatabaseTester {
     [Collection("Sequential")]
     public class FileTests {
+        // NOTE: All tests are customized to files listed in filepaths.txt main developer (Salah Elabyad)
+
+
         // TODO: add the ability to navigate to file's parent
         // TODO: Note I have considered not adding references to child files and such, and leaving it to the system.
         //          but I can't fully support the export/import fix links without it. User would have to redo the
@@ -100,35 +104,35 @@ namespace TagDatabaseTester {
             string testpath;
 
             testpath = @"C:\Windpws";
-            Assert.Equal(@"C:\",fc.GetRootPath(testpath));
+            Assert.Equal(@"C:\",fc.GetParentPath(testpath));
             testpath =@"C:\";
-            Assert.Null(fc.GetRootPath(testpath));
+            Assert.Null(fc.GetParentPath(testpath));
 
             testpath = @"C:";
-            Assert.Null(fc.GetRootPath(testpath));
+            Assert.Null(fc.GetParentPath(testpath));
 
             testpath = @"hello.txt";
-            Assert.Equal("", fc.GetRootPath(testpath));
+            Assert.Equal("", fc.GetParentPath(testpath));
 
             testpath = @"test\hello.txt";
-            Assert.Equal("", fc.GetRootPath(testpath));
+            Assert.Equal("", fc.GetParentPath(testpath));
 
             testpath = @"H:";
-            Assert.Null(fc.GetRootPath(testpath));
+            Assert.Null(fc.GetParentPath(testpath));
             
             testpath = @"H:\";
-            Assert.Null(fc.GetRootPath(testpath));
+            Assert.Null(fc.GetParentPath(testpath));
 
             testpath = @"H:\MusicProj+Song";
-            Assert.Equal(@"H:\", fc.GetRootPath(testpath));
+            Assert.Equal(@"H:\", fc.GetParentPath(testpath));
             testpath = @"H:\MusicProj+Song\";
-            Assert.Equal(@"H:\", fc.GetRootPath(testpath));
+            Assert.Equal(@"H:\", fc.GetParentPath(testpath));
 
             testpath = @"H:\MusicProj+Song\GuitarPro\GP2";
-            Assert.Equal(@"H:\MusicProj+Song\GuitarPro", fc.GetRootPath(testpath));
+            Assert.Equal(@"H:\MusicProj+Song\GuitarPro", fc.GetParentPath(testpath));
             
             testpath = @"H:\MusicProj+Song\GuitarPro\GP2\";
-            Assert.Equal(@"H:\MusicProj+Song\GuitarPro", fc.GetRootPath(testpath));
+            Assert.Equal(@"H:\MusicProj+Song\GuitarPro", fc.GetParentPath(testpath));
         }
 
         //[Fact]
@@ -137,23 +141,129 @@ namespace TagDatabaseTester {
         //        output.WriteLine(str);
         //    }
         //}
-
+        
+        [Fact]
+        public void ShouldGetNonExistingFileParent() {
+            Assert.Equal("H:\\",fc.GetParentPath("H:\\MusicProj+Sg22"));
+        }
         [Fact]
         public void CreateFile() {
-
+            CreateEmptyTestDBWithTables();
+            AddSingleFileAndVerify(0, 0);
+            Assert.Equal(-1, fc.AddFile(sampleFiles[0]));
+            CleanupTables();
         }
 
+        private void AddSingleFileAndVerify(int count, int index) {
+            int fileID = fc.AddFile(sampleFiles[index]);
+            Assert.Equal(count + 1, fileID);
+            Assert.Equal(fileID, fc.GetFileID(sampleFiles[index]));
+            Assert.Equal(FileController.FixFilePath(sampleFiles[index]), fc.GetFilePath(fileID));
+        }
 
+        // It seems to be slow to add parent child relationship
+        /*
+         * For 6831 files it takes a lot more than 6 minutes (stopped)
+         * Will output speed logs to
+         * 
+         */
+        [Fact]
+        public void CreateFilesAndOneConnection() {
+            CreateEmptyTestDBWithTables();
+            AddSingleFileAndVerify(0, 0);
+            AddSingleFileAndVerify(1, 1);
+            AddSingleFileAndVerify(2, 2);
+            AddSingleFileAndVerify(3, 3);
+            AddSingleFileAndVerify(4, 4);
+            FixAllSampleFiles();
+            VerifyParentRelation(0, 1); // 1,2
+            VerifyParentRelation(2, 3); // 3,4
+            CleanupTables();
+        }
         [Fact]
         public void CreateFilesThenChildFilesWhichWillBeRelated() {
-
-
-
+            CreateEmptyTestDBWithTables();
+            for (int i = 0; i < 100; i++) {//sampleFiles.Count; i++) 
+                //var watch = System.Diagnostics.Stopwatch.StartNew();
+                // TODO: createa  bulk add and test
+                AddSingleFileAndVerify(i, i);
+                //watch.Stop();
+                //var elapsedMs = watch.ElapsedMilliseconds;
+                //Utils.LogToOutput(elapsedMs.ToString());
+            }
+            FixAllSampleFiles();
+            VerifyCustomIndicies();
+            CleanupTables();
         }
+        private void FixAllSampleFiles() {
+            for(int i = 0; i < sampleFiles.Count; i++)
+                sampleFiles[i] = FileController.FixFilePath(sampleFiles[i]);
+        }
+        private void VerifyCustomIndicies() {
+            VerifyParentRelation(0, 1); // 1,2
+            VerifyParentRelation(2, 3); // 3,4, careful that 4 & 5 are one folder appart
+            VerifyChildRelation(4, Enumerable.Range(5, 22-6+1).ToList()); // 5, [6 to 22] inclusive
+        }
+        private void VerifyParentRelation(int parentIndex,int childFileIndex) {
+            Assert.Equal(fc.GetFileID(sampleFiles[parentIndex]),
+                fc.RetrieveFileParentID(sampleFiles[childFileIndex]));
+        }
+        private void VerifyChildRelation(int parentIndex, List<int> childIndicies) {
+            int parentID = fc.GetFileID(sampleFiles[parentIndex]);
+            foreach(int cIndex in childIndicies)
+                Assert.Equal(parentID, fc.RetrieveFileParentID(sampleFiles[cIndex]));
+        }
+
         [Fact]
-        public void CreateFilesThenParentFilesWhichWillBeRelated() {
+        public void CreateFilesThenParentFilesWhichWillBeRelated() { // for time
+            CreateEmptyTestDBWithTables();
+            int count = 0; //sampleFiles.Count-1
+            for (int i = 100; i>-1 ; i--) {
+                var watch = System.Diagnostics.Stopwatch.StartNew();
+                AddSingleFileAndVerify(count++, i);
+                watch.Stop();
+                var elapsedMs = watch.ElapsedMilliseconds;
+                Utils.LogToOutput(elapsedMs.ToString());
+            }
+            FixAllSampleFiles();
+            CleanupTables();
+        }
+
+
+
+        [Fact]
+        public void BulkAddFiles() {
+            CreateEmptyTestDBWithTables();
+            FixAllSampleFiles();
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            fc.BulkAddFiles(sampleFiles);
+            watch.Stop();
+            var elapsedMs = watch.ElapsedMilliseconds;
+            Utils.LogToOutput(elapsedMs.ToString());
+
+            // DO update first then next test
+
+
+            //List<(string, int)> fileData = fc.RetrieveFileChildren(1); // 53
+            //for (int i = 0; i < fileData.Count; i++) {
+            //    Utils.LogToOutput(fileData[i].Item2 + " " + fileData[i].Item1);
+            //}
+            //VerifyCustomLargeSetOfIndicies_1();
+            //CleanupTables();
+        }
+        public void BulkAddFilesInTheSameFolder() { // parent exists
+            // add one file first, then add a parent with it, to see if it will cause problems
 
         }
+
+        private void VerifyCustomLargeSetOfIndicies_1() {
+            VerifyParentRelation(0, 1); // 1,2
+            VerifyParentRelation(2, 3); // 3,4, careful that 4 & 5 are one folder appart
+            VerifyChildRelation(4, Enumerable.Range(5, 22 - 6 + 1).ToList()); // 5, [6 to 22] inclusive
+        }
+
+        // TODO: Test and optimize renaming speed
+        //
 
         // no tags here, just file validity (does it still exists) and parent child links check to see if broken, and possible recursive repair
         // TODO: make sure what file paths are (we dont want folders to end with '\' or '/'

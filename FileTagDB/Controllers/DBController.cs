@@ -29,12 +29,16 @@ namespace FileTagDB.Controllers {
         public static bool TryExecuteSingleRead(SQLiteCommand cmd, string cmdText, string columnName, out object? result) {
             cmd.CommandText = cmdText;
             var reader = cmd.ExecuteReader();
-            if (!reader.HasRows) {
+            if (!reader.Read()) {
                 result = null;
+                reader.Close();
                 return false;
             }
-            reader.Read();
+            //Utils.LogToOutput("Fields");
+            //for (int i = 0; i < reader.FieldCount; i++)
+            //    Utils.LogToOutput(reader.GetFieldType(i).ToString());
             result = reader[columnName];
+            reader.Close();
             return true;
         }
         public static object ExecuteScalerAutoConn(string cmdText) {

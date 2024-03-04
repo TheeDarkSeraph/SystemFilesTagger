@@ -10,7 +10,7 @@ using FileTagDB.Models;
 namespace FileTagDB.Controllers {
     public class TagController {
         // TODO: Renamable box selection item...
-        // TODO: Select from list where tag = regexp (translated from user)
+        // TODO: Select from list where tag = regexp (translated FROM user)
         FileController _fileController;
         public TagController(FileController fc) {
             _fileController = fc;
@@ -21,6 +21,7 @@ namespace FileTagDB.Controllers {
         }  
         
         public int CreateTag(string tag) {
+            Utils.LogToOutput("Tag to be inserted :" + tag);
             int lastInsertedRowId = -1;
             using (var conn = DBController.GetDBConnection()) {
                 conn.Open();
@@ -48,8 +49,14 @@ namespace FileTagDB.Controllers {
         }
         public string GetTagName(int tagID) {
             object? result;
-            string cmdText = $"SELECT {TableConst.tagsCoName} WHERE {TableConst.tagsTName} WHERE {TableConst.tagsCoID} = {tagID};";
-            bool success = DBController.TryExecuteSingleReadAutoConn(cmdText, $"{TableConst.tagsCoName}", out result);
+            string cmdText = $"SELECT {TableConst.tagsCoName} FROM {TableConst.tagsTName} WHERE {TableConst.tagsCoID} = {tagID};";
+            bool success;
+            using (var conn = DBController.GetDBConnection()) {
+                conn.Open();
+                using (var cmd = new SQLiteCommand(conn))
+                    success = DBController.TryExecuteSingleRead(cmd, cmdText, $"{TableConst.tagsCoName}", out result);
+                conn.Close();
+            }
             if (!success || result == null)
                 return "+NotFound";
             return (string)result;
@@ -59,8 +66,16 @@ namespace FileTagDB.Controllers {
         // there isn't even 1 mil words...
         public int GetTagID(string tag) {
             object? result;
-            string cmdText = $"SELECT  {TableConst.tagsCoID} WHERE {TableConst.tagsTName} WHERE {TableConst.tagsCoName} = '{tag}';";
-            bool success = DBController.TryExecuteSingleReadAutoConn(cmdText, $"{TableConst.tagsCoID}", out result);
+            string cmdText = $"SELECT  {TableConst.tagsCoID} FROM {TableConst.tagsTName} WHERE {TableConst.tagsCoName} = $tag";
+            bool success;
+            using (var conn = DBController.GetDBConnection()) {
+                conn.Open();
+                using (var cmd = new SQLiteCommand(conn)) {
+                    cmd.Parameters.AddWithValue("$tag", tag);
+                    success = DBController.TryExecuteSingleRead(cmd, cmdText, $"{TableConst.tagsCoID}", out result);
+                }
+                conn.Close();
+            }
             if (!success||result==null)
                 return -1;
             return (int)((Int64)result);
@@ -68,12 +83,16 @@ namespace FileTagDB.Controllers {
         #endregion
 
         public int RenameTag(int tagID, string newName) {
-            return GetAffectedRowsFromQueryAutoCon($"UPDATE {TableConst.tagsTName} SET {TableConst.tagsCoName} = '{newName}' WHERE {TableConst.tagsCoID} = {tagID};");
+            return GetAffectedRowsFromQueryAutoCon($"UPDATE {TableConst.tagsTName} SET {TableConst.tagsCoName} = $newname" +
+                $" WHERE {TableConst.tagsCoID} = {tagID}", new List<string>{"$newname"}, new List<string> { newName });
         }
         public int RenameTag(string tagName, string newName) { // won't be used... 
             if (tagName == newName)
                 return 0; // otherwise 1 will be returned
-            return GetAffectedRowsFromQueryAutoCon($"UPDATE {TableConst.tagsTName} SET {TableConst.tagsCoName} = '{newName}' WHERE {TableConst.tagsCoName} = '{tagName}';");
+
+            return GetAffectedRowsFromQueryAutoCon($"UPDATE {TableConst.tagsTName} SET {TableConst.tagsCoName} = $newname" +
+                $" WHERE {TableConst.tagsCoName} = $tagName", new List<string> { "$newname", "$tagName" },
+                new List<string> { newName, tagName });
         }
 
         public int DeleteTag(int tagID) {
@@ -84,6 +103,19 @@ namespace FileTagDB.Controllers {
             int rowsAffected = 0;
             conn.Open();
             using (var cmd = new SQLiteCommand(conn)) {
+                rowsAffected = DBController.ExecuteNonQCommand(cmd, cmdText);
+                cmd.Dispose();
+            }
+            conn.Close();
+            return rowsAffected;
+        }
+        public int GetAffectedRowsFromQueryAutoCon(string cmdText, List<string> paramName, List<string> paramValue) {
+            var conn = DBController.GetDBConnection();
+            int rowsAffected = 0;
+            conn.Open();
+            using (var cmd = new SQLiteCommand(conn)) {
+                for (int i = 0; i < paramName.Count; i++)
+                    cmd.Parameters.AddWithValue(paramName[i], paramValue[i]);
                 rowsAffected = DBController.ExecuteNonQCommand(cmd, cmdText);
                 cmd.Dispose();
             }

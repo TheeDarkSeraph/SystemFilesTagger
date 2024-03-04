@@ -102,6 +102,29 @@ namespace TagDatabaseTester {
         }
 
         [Fact]
+        public void ShouldCreateTagsWithStrangeCharacters() {
+            // test arabic, test many quotations (even and odd) test '$'
+            CreateEmptyTestDBWithTables();
+            sampleTags[0] += "'''";
+            sampleTags[1] += "''";
+            sampleTags[2] += "''\"''";
+            sampleTags[4] += "غثغثyes' fed' \"يبنثبثشي";
+            tc.CreateTag(sampleTags[0]);
+            tc.CreateTag(sampleTags[1]);
+            tc.CreateTag(sampleTags[2]);
+            tc.CreateTag(sampleTags[3]);
+            Assert.Equal(sampleTags[0], tc.GetTagName(1));
+            Assert.Equal(sampleTags[1], tc.GetTagName(2));
+            Assert.Equal(sampleTags[2], tc.GetTagName(3));
+            Assert.Equal(sampleTags[3], tc.GetTagName(4));
+            Assert.Equal(4, tc.CountTags());
+
+
+            CleanupTables();
+
+        }
+
+        [Fact]
         public void CreateAndRenameTag() { // rename twice, one should have effect , second repeated time we don't know?
             CreateEmptyTestDBWithTables();
             tc.CreateTag(sampleTags[0]);

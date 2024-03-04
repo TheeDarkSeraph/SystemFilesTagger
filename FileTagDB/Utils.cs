@@ -2,7 +2,7 @@
     public static class Utils {
 
         static Action<string>? printer;
-
+        public static readonly List<string> Empty= new List<string>();
         public static void SetPrinter(Action<string> outputter) {
             printer = outputter;
         }

@@ -9,7 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TagDatabaseTester", "TagDat
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FileTagDB", "FileTagDB\FileTagDB.csproj", "{CC932D76-B783-4938-9DDB-9F29799BDD37}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HelperTools", "FilePathGenerator\HelperTools.csproj", "{D0D40F67-466D-43C0-A90C-C9495DF8B8F9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HelperTools", "HelperTools\HelperTools.csproj", "{FDAD16A2-64A9-4D71-BA21-6F366776CA34}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -29,10 +29,10 @@ Global
 		{CC932D76-B783-4938-9DDB-9F29799BDD37}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CC932D76-B783-4938-9DDB-9F29799BDD37}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CC932D76-B783-4938-9DDB-9F29799BDD37}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D0D40F67-466D-43C0-A90C-C9495DF8B8F9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D0D40F67-466D-43C0-A90C-C9495DF8B8F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D0D40F67-466D-43C0-A90C-C9495DF8B8F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D0D40F67-466D-43C0-A90C-C9495DF8B8F9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FDAD16A2-64A9-4D71-BA21-6F366776CA34}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FDAD16A2-64A9-4D71-BA21-6F366776CA34}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FDAD16A2-64A9-4D71-BA21-6F366776CA34}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FDAD16A2-64A9-4D71-BA21-6F366776CA34}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
