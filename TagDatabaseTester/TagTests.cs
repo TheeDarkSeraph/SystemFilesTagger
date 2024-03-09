@@ -7,11 +7,14 @@ using System.Text;
 using System.Threading.Tasks;
 using Xunit.Abstractions;
 using System.Data.SQLite;
+using FileTagDB.Models;
 
 namespace TagDatabaseTester {
     [Collection("Sequential")] // this stops the parallel problem with deleting DB file
     // also it makes them run sequentially
     public class TagTests {
+        // TODO: Can add tags from a file
+
         // add static populate data and delete data
         // TODO: Test all languages for tags
         // TODO: When user types in a space or an illegal character, show a tooltip for a few seconds
@@ -71,6 +74,17 @@ namespace TagDatabaseTester {
         }
         #endregion
 
+
+
+
+
+
+
+
+
+
+
+        #region Creating individual tags
         [Fact]
         public void CreateTagsAndGetID() {
             CreateEmptyTestDBWithTables();
@@ -86,8 +100,6 @@ namespace TagDatabaseTester {
             Assert.Equal(1, tc.GetTagID(sampleTags[0]));
             CleanupTables();
         }
-
-
         [Fact]
         public void ShouldCreateTags() {
             CreateEmptyTestDBWithTables();
@@ -118,12 +130,19 @@ namespace TagDatabaseTester {
             Assert.Equal(sampleTags[2], tc.GetTagName(3));
             Assert.Equal(sampleTags[3], tc.GetTagName(4));
             Assert.Equal(4, tc.CountTags());
-
-
             CleanupTables();
-
         }
 
+        [Fact]
+        public void ShouldCreateTagsWithDBCharacters() {
+            // test arabic, test many quotations (even and odd) test '$'
+            CreateEmptyTestDBWithTables();
+            sampleTags[0] += "_%";
+            tc.CreateTag(sampleTags[0]);
+            Assert.Equal(sampleTags[0], tc.GetTagName(1));
+            CleanupTables();
+        }
+        #endregion
         [Fact]
         public void CreateAndRenameTag() { // rename twice, one should have effect , second repeated time we don't know?
             CreateEmptyTestDBWithTables();
@@ -144,6 +163,56 @@ namespace TagDatabaseTester {
             Assert.Equal(sampleTags[4], tc.GetTagName(1));
             CleanupTables();
         }
+
+
+        [Fact]
+        public void CreateBulkTagsNothingAdded() {
+
+            CreateEmptyTestDBWithTables();
+            AddAllTags();
+            Assert.NotEqual(-1, tc.GetTagID(sampleTags[1]));
+            Assert.NotEqual(-1, tc.GetTagID(sampleTags[23]));
+            Assert.NotEqual(-1, tc.GetTagID(sampleTags[14]));
+            Assert.NotEqual(-1, tc.GetTagID(sampleTags[19]));
+            Assert.NotEqual(-1, tc.GetTagID(sampleTags[31]));
+            CleanupTables();
+        }
+        [Fact]
+        public void CreateBulkTagsSomePreAdded() {
+            CreateEmptyTestDBWithTables();
+            tc.CreateTag(sampleTags[1]);
+            tc.CreateTag(sampleTags[23]);
+            tc.CreateTag(sampleTags[14]);
+            AddAllTags();
+            Assert.NotEqual(-1, tc.GetTagID(sampleTags[1]));
+            Assert.NotEqual(-1, tc.GetTagID(sampleTags[23]));
+            Assert.NotEqual(-1, tc.GetTagID(sampleTags[14]));
+            Assert.NotEqual(-1, tc.GetTagID(sampleTags[19]));
+            Assert.NotEqual(-1, tc.GetTagID(sampleTags[31]));
+            CleanupTables();
+        }
+
+        [Fact]
+        public void ShouldGetAllTags() {
+            CreateEmptyTestDBWithTables();
+            AddAllTags();
+            List<string> insertedTags = tc.GetAllTagsAsStrings();
+            List<Tag> insertedTagsAsTags = tc.GetAllTags();
+            insertedTags.Sort();
+            insertedTagsAsTags.Sort();
+            sampleTags.Sort();
+            Assert.Equal(sampleTags.Count, insertedTags.Count);
+            for (int i = 0; i < sampleTags.Count; i++) {
+                Assert.Equal(sampleTags[i], insertedTags[i]);
+                Assert.Equal(sampleTags[i], insertedTagsAsTags[i].name);
+            }
+        }
+        private void AddAllTags() {
+            tc.CreateTags(sampleTags);
+        }
+
+
+
 
         [Fact]
         public void DeleteTag() {

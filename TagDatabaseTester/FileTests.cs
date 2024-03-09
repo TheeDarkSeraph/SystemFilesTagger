@@ -11,6 +11,11 @@ using System.Diagnostics;
 using System.Reflection;
 
 namespace TagDatabaseTester {
+    // NOTE: run tests individually, the sequential calls were not implemented
+
+    // to run sequentially, put all classes under same collection label
+    // This means tests that run sequential (and not parallel) should be in different classes under same name
+    //   so multiple classes like this : https://stackoverflow.com/questions/1408175/execute-unit-tests-serially-rather-than-in-parallel
     [Collection("Sequential")]
     public class FileTests {
         // NOTE: All tests are customized to files listed in filepaths.txt main developer (Salah Elabyad)
@@ -26,31 +31,6 @@ namespace TagDatabaseTester {
         FileController fc;
         
 
-        /*
-         * 
-         * https://www.techonthenet.com/sqlite/and_or.php#:~:text=The%20SQLite%20AND%20condition%20and,operations%20in%20Math%20class!)
-         * SELECT p.*
-         * FROM Pizza p
-         * JOIN PT pt ON p.ID = pt.PizzaID
-         * JOIN Toppings t ON pt.ToppingID = t.ID
-         * WHERE t.name LIKE 't%'
-         *  AND (t.name = 'cheese' OR t.name = 'sauce');
-         * 
-         * Another approach
-         * I think one long comparison is better than multiple runs of small comparisons... Disk scanning wise
-         * 
-         * SELECT p.*
-         * FROM Pizza p
-         * JOIN PT pt ON p.ID = pt.PizzaID
-         * WHERE pt.ToppingID IN (SELECT ID FROM Toppings WHERE name LIKE 't%')
-         *      AND pt.ToppingID IN (SELECT ID FROM Toppings WHERE name IN ('cheese', 'sauce'));
-         * 
-         * 
-         * 
-         * 
-         * 
-         * 
-         */
 
 
         #region Prints and Helper functions
@@ -98,41 +78,41 @@ namespace TagDatabaseTester {
         }
         #endregion
 
-
+        #region Finished Tests
         [Fact]
         public void GetRootPaths() {
             string testpath;
 
             testpath = @"C:\Windpws";
-            Assert.Equal(@"C:\",fc.GetParentPath(testpath));
+            Assert.Equal(@"C:\",FileController.GetParentPath(testpath));
             testpath =@"C:\";
-            Assert.Null(fc.GetParentPath(testpath));
+            Assert.Null(FileController.GetParentPath(testpath));
 
             testpath = @"C:";
-            Assert.Null(fc.GetParentPath(testpath));
+            Assert.Null(FileController.GetParentPath(testpath));
 
             testpath = @"hello.txt";
-            Assert.Equal("", fc.GetParentPath(testpath));
+            Assert.Equal("", FileController.GetParentPath(testpath));
 
             testpath = @"test\hello.txt";
-            Assert.Equal("", fc.GetParentPath(testpath));
+            Assert.Equal("", FileController.GetParentPath(testpath));
 
             testpath = @"H:";
-            Assert.Null(fc.GetParentPath(testpath));
+            Assert.Null(FileController.GetParentPath(testpath));
             
             testpath = @"H:\";
-            Assert.Null(fc.GetParentPath(testpath));
+            Assert.Null(FileController.GetParentPath(testpath));
 
             testpath = @"H:\MusicProj+Song";
-            Assert.Equal(@"H:\", fc.GetParentPath(testpath));
+            Assert.Equal(@"H:\", FileController.GetParentPath(testpath));
             testpath = @"H:\MusicProj+Song\";
-            Assert.Equal(@"H:\", fc.GetParentPath(testpath));
+            Assert.Equal(@"H:\", FileController.GetParentPath(testpath));
 
             testpath = @"H:\MusicProj+Song\GuitarPro\GP2";
-            Assert.Equal(@"H:\MusicProj+Song\GuitarPro", fc.GetParentPath(testpath));
+            Assert.Equal(@"H:\MusicProj+Song\GuitarPro", FileController.GetParentPath(testpath));
             
             testpath = @"H:\MusicProj+Song\GuitarPro\GP2\";
-            Assert.Equal(@"H:\MusicProj+Song\GuitarPro", fc.GetParentPath(testpath));
+            Assert.Equal(@"H:\MusicProj+Song\GuitarPro", FileController.GetParentPath(testpath));
         }
 
         //[Fact]
@@ -144,7 +124,7 @@ namespace TagDatabaseTester {
         
         [Fact]
         public void ShouldGetNonExistingFileParent() {
-            Assert.Equal("H:\\",fc.GetParentPath("H:\\MusicProj+Sg22"));
+            Assert.Equal("H:\\",FileController.GetParentPath("H:\\MusicProj+Sg22"));
         }
         [Fact]
         public void CreateFile() {
@@ -161,12 +141,6 @@ namespace TagDatabaseTester {
             Assert.Equal(FileController.FixFilePath(sampleFiles[index]), fc.GetFilePath(fileID));
         }
 
-        // It seems to be slow to add parent child relationship
-        /*
-         * For 6831 files it takes a lot more than 6 minutes (stopped)
-         * Will output speed logs to
-         * 
-         */
         [Fact]
         public void CreateFilesAndOneConnection() {
             CreateEmptyTestDBWithTables();
@@ -183,15 +157,10 @@ namespace TagDatabaseTester {
         [Fact]
         public void CreateFilesThenChildFilesWhichWillBeRelated() {
             CreateEmptyTestDBWithTables();
-            for (int i = 0; i < 100; i++) {//sampleFiles.Count; i++) 
-                //var watch = System.Diagnostics.Stopwatch.StartNew();
-                // TODO: createa  bulk add and test
-                AddSingleFileAndVerify(i, i);
-                //watch.Stop();
-                //var elapsedMs = watch.ElapsedMilliseconds;
-                //Utils.LogToOutput(elapsedMs.ToString());
-            }
             FixAllSampleFiles();
+            for (int i = 0; i < 100; i++) {
+                AddSingleFileAndVerify(i, i);
+            }
             VerifyCustomIndicies();
             CleanupTables();
         }
@@ -199,127 +168,346 @@ namespace TagDatabaseTester {
             for(int i = 0; i < sampleFiles.Count; i++)
                 sampleFiles[i] = FileController.FixFilePath(sampleFiles[i]);
         }
-        private void VerifyCustomIndicies() {
-            VerifyParentRelation(0, 1); // 1,2
-            VerifyParentRelation(2, 3); // 3,4, careful that 4 & 5 are one folder appart
-            VerifyChildRelation(4, Enumerable.Range(5, 22-6+1).ToList()); // 5, [6 to 22] inclusive
-        }
-        private void VerifyParentRelation(int parentIndex,int childFileIndex) {
-            Assert.Equal(fc.GetFileID(sampleFiles[parentIndex]),
-                fc.RetrieveFileParentID(sampleFiles[childFileIndex]));
-        }
-        private void VerifyChildRelation(int parentIndex, List<int> childIndicies) {
-            int parentID = fc.GetFileID(sampleFiles[parentIndex]);
-            foreach(int cIndex in childIndicies)
-                Assert.Equal(parentID, fc.RetrieveFileParentID(sampleFiles[cIndex]));
-        }
+
 
         [Fact]
         public void CreateFilesThenParentFilesWhichWillBeRelated() { // for time
             CreateEmptyTestDBWithTables();
-            int count = 0; //sampleFiles.Count-1
-            for (int i = 100; i>-1 ; i--) {
-                var watch = System.Diagnostics.Stopwatch.StartNew();
-                AddSingleFileAndVerify(count++, i);
-                watch.Stop();
-                var elapsedMs = watch.ElapsedMilliseconds;
-                Utils.LogToOutput(elapsedMs.ToString());
-            }
+            for (int i = sampleFiles.Count-1; i > (sampleFiles.Count-200); i--) 
+                fc.AddFile(sampleFiles[i]);
+            for (int i = 100; i>-1 ; i--) 
+                fc.AddFile(sampleFiles[i]);
             FixAllSampleFiles();
+            List<(string, int)> fileChilds = fc.GetFileChildren(sampleFiles[4 - 1]);
+            for(int i = 0; i < fileChilds.Count; i++) {
+                Assert.NotEqual(5, fileChilds[i].Item2);
+                Assert.NotEqual(6, fileChilds[i].Item2);
+                Assert.NotEqual(7, fileChilds[i].Item2);
+                Assert.NotEqual(8, fileChilds[i].Item2);
+            }
+
+
+            CleanupTables();
+        }
+        [Fact]
+        public void ShouldBulkAddFiles() {
+            CreateEmptyTestDBWithTables();
+            FixAllSampleFiles();
+            for(int i = 0; i < 10; i++) {
+                Utils.LogToOutput($"File {i+1,-3} {sampleFiles[i]}");
+            }
+
+            //fc.ACAddFile(sampleFiles[4]); // commenting this line removes the parent
+
+            // bulk insert will fail in some parts if there is a file repeated in the insertion
+            // also I think that if childs exist, it will not link them
+            //fc.AddFile(sampleFiles[5]); // commenting this line removes the parent
+            //fc.AddFile(sampleFiles[6]); // commenting this line removes the parent
+
+            //sampleFiles.RemoveAt(4);  // removing this will cause issue with verify index, since it does need the order
+            fc.BulkAddFiles(sampleFiles); //w parent 4864 wo parent 4802-4900 // significant improvement
+            //fc.ACBulkAddFilesV1(sampleFiles); //w parent 9547 wo parent 4706-4805
+            
+            //Utils.LogToOutput("file path :: " + sampleFiles[6830 - 1]);
+            //foreach(string name in sampleFiles) {
+            //    if (-1 == fc.GetFileID(name)) {
+            //        Utils.LogToOutput("Missing link :: " + name);
+            //    }
+            //}
+            Assert.NotEqual(-1, fc.GetFileID(sampleFiles[6830 - 1]));
+            
+            // DO update first then next test
+
+            VerifyCustomLargeSetOfIndicies_1_AllIncluded();
             CleanupTables();
         }
 
-
-
         [Fact]
-        public void BulkAddFiles() {
+        public void ShouldBulkAddFilesWithPreaddedFiles() {
             CreateEmptyTestDBWithTables();
             FixAllSampleFiles();
+
+            fc.AddFile(sampleFiles[5]); // commenting this line removes the parent
+            fc.AddFile(sampleFiles[6]); // commenting this line removes the parent
+
+            //sampleFiles.RemoveAt(4);  // removing this will cause issue with verify index, since it does need the order
+            fc.BulkAddFiles(sampleFiles); //w parent 4864 wo parent 4802-4900 // significant improvement
+            //fc.ACBulkAddFilesV1(sampleFiles); //w parent 9547 wo parent 4706-4805
+
+            Assert.NotEqual(-1, fc.GetFileID(sampleFiles[6830 - 1]));
+
+            VerifyCustomLargeSetOfIndicies_1_AllIncluded();
+            CleanupTables();
+        }
+        [Fact]
+        public void ShouldBulkAddFilesWithChildsExisting_1() {
+            CreateEmptyTestDBWithTables();
+            FixAllSampleFiles();
+
+            // having re-inserts (inserting here, then re-inserting below) will be a bit slower (about 60-70% more time)
+            fc.BulkAddFiles(sampleFiles.Skip(22).ToList()); //w parent 4864 wo parent 4802-4900 // significant improvement
+            fc.BulkAddFiles(sampleFiles.Take(22).ToList());
+
+            //sampleFiles.RemoveAt(4);  // removing this will cause issue with verify index, since it does need the order
+            fc.BulkAddFiles(sampleFiles); //w parent 4864 wo parent 4802-4900 // significant improvement
+            
+            //fc.ACBulkAddFilesV1(sampleFiles); //w parent 9547 wo parent 4706-4805
+            
+
+            // DO update first then next test
+
+            VerifyCustomLargeSetOfIndicies_1_AllIncluded();
+            CleanupTables();
+        }
+
+        [Fact]
+        public void ShouldBulkAddFilesWithChildsExisting_RepeatedChilds() {
+            // this causes a lot of issues re-inserting things
+            CreateEmptyTestDBWithTables();
+            FixAllSampleFiles();
+            for (int i = 0; i < 10; i++) {
+                Utils.LogToOutput($"File {i + 1,-3} {sampleFiles[i]}");
+            }
             var watch = System.Diagnostics.Stopwatch.StartNew();
-            fc.BulkAddFiles(sampleFiles);
+
+
+            fc.BulkAddFiles(sampleFiles.Skip(19).ToList()); //w parent 4864 wo parent 4802-4900 // significant improvement
+            fc.BulkAddFiles(sampleFiles.Take(22).ToList()); // repeated childs
+
+            //sampleFiles.RemoveAt(4);  // removing this will cause issue with verify index, since it does need the order
+            fc.BulkAddFiles(sampleFiles); // this causes major delay because it tries to re-insert everything
             watch.Stop();
             var elapsedMs = watch.ElapsedMilliseconds;
             Utils.LogToOutput(elapsedMs.ToString());
 
             // DO update first then next test
 
-
-            //List<(string, int)> fileData = fc.RetrieveFileChildren(1); // 53
-            //for (int i = 0; i < fileData.Count; i++) {
-            //    Utils.LogToOutput(fileData[i].Item2 + " " + fileData[i].Item1);
-            //}
-            //VerifyCustomLargeSetOfIndicies_1();
-            //CleanupTables();
+            VerifyCustomLargeSetOfIndicies_1_AllIncluded();
+            CleanupTables();
         }
-        public void BulkAddFilesInTheSameFolder() { // parent exists
-            // add one file first, then add a parent with it, to see if it will cause problems
+        //List<(string, int)> fileData = fc.RetrieveFileChildren(1); // 53
+        //for (int i = 0; i < fileData.Count; i++) {
+        //    Utils.LogToOutput(fileData[i].Item2 + " " + fileData[i].Item1);
+        //}
+        [Fact]
+        public void ShouldGetAllFilesUnderCertainPath() {
+            // folder and all files in it or in its folder recursively (And the folders)
+            Assert.True(false);
+            // TODO: add all files, get files in a certain path... (Getwith path
 
         }
 
-        private void VerifyCustomLargeSetOfIndicies_1() {
+        #endregion
+
+        #region Verification
+        private void VerifyParentByLineNumber(int parentLine, int childLine) {
+            Utils.LogToOutput(string.Format("Fetching parent relations of lines {0} , {1} : corresponding to: \n {2}  ::  {3}",
+                parentLine, childLine, sampleFiles[parentLine - 1], sampleFiles[childLine - 1]));
+            VerifyParentRelation(parentLine - 1, childLine - 1);
+        }
+
+        private void VerifyParentRelation(int parentIndex, int childFileIndex) {
+            Utils.LogToOutput("Index print " + parentIndex + " , " + childFileIndex);
+            Assert.NotEqual(-1, fc.GetFileID(sampleFiles[parentIndex]));
+            Assert.NotEqual(-1, fc.GetFileID(sampleFiles[childFileIndex]));
+            Assert.Equal(fc.GetFileID(sampleFiles[parentIndex]),
+                fc.GetFilesParentID(sampleFiles[childFileIndex]));
+        }
+        private void VerifyMultipleParentRelation(int parentIndex, List<int> childIndicies) {
+            foreach (int cIndex in childIndicies)
+                VerifyParentRelation(parentIndex, cIndex);
+        }
+        private void VerifyCustomLargeSetOfIndicies_1_AllIncluded() {
+            VerifyParentByLineNumber(1, 2); // 1,2
+            VerifyParentByLineNumber(3, 4); // 3,4, careful that 4 & 5 are one folder appart
+            VerifyParentByLineNumber(5, 6); // 6 is the start of the list
+            VerifyParentByLineNumber(5, 22); // 6 is the end of the list so everything in between would be fine I would assume
+            VerifyParentByLineNumber(22, 23); // 6 is the end of the list
+            VerifyParentByLineNumber(22, 36); // 6 is the end of the list
+            VerifyParentByLineNumber(65, 66); // 6 is the end of the list
+            VerifyParentByLineNumber(65, 6702); // 6 is the end of the list
+            VerifyParentByLineNumber(6702, 6703); // 6 is the end of the list
+            VerifyParentByLineNumber(6702, 6750); // 6 is the end of the list
+            VerifyParentByLineNumber(6752, 6753); // 6 is the end of the list
+            VerifyParentByLineNumber(6752, 6766); // 6 is the end of the list
+        }
+        private void VerifyCustomIndicies() {
             VerifyParentRelation(0, 1); // 1,2
             VerifyParentRelation(2, 3); // 3,4, careful that 4 & 5 are one folder appart
-            VerifyChildRelation(4, Enumerable.Range(5, 22 - 6 + 1).ToList()); // 5, [6 to 22] inclusive
+            VerifyMultipleParentRelation(4, Enumerable.Range(5, 22 - 6 + 1).ToList()); // 5, [6 to 22] inclusive
+        }
+        #endregion
+
+        // TODO: Check renaming speed and validity
+        //
+        // no tags here, just file validity (does it still exists) and parent child links check to see if broken, and possible recursive repair
+
+        private void SetupAndInsertAllFiles() {
+            CreateEmptyTestDBWithTables();
+            FixAllSampleFiles();
+            fc.BulkAddFiles(sampleFiles);
         }
 
-        // TODO: Test and optimize renaming speed
-        //
+        [Fact]
+        public void DeleteFileAndItsRelations_1() {
+            SetupAndInsertAllFiles();
+            DeleteFileAtLine(5);
+            Assert.Equal(-1, fc.GetFileID(sampleFiles[5 - 1]));
+            
+            Assert.Equal(-1, fc.GetFilesParentID(sampleFiles[6 - 1]));
+            Assert.Equal(-1, fc.GetFilesParentID(sampleFiles[7 - 1]));
+            Assert.Equal(-1, fc.GetFilesParentID(sampleFiles[8 - 1]));
 
-        // no tags here, just file validity (does it still exists) and parent child links check to see if broken, and possible recursive repair
-        // TODO: make sure what file paths are (we dont want folders to end with '\' or '/'
-        /*
-         * Insert multiple transactions
-         * using (var transaction = connection.BeginTransaction())
-            {
-                var command = connection.CreateCommand();
-                command.CommandText =
-                @"
-                    INSERT INTO data
-                    VALUES ($value)
-                ";
+            Assert.NotEqual(-1, fc.GetFileID(sampleFiles[6 - 1]));
+            Assert.NotEqual(-1, fc.GetFileID(sampleFiles[7 - 1]));
+            Assert.NotEqual(-1, fc.GetFileID(sampleFiles[8 - 1]));
+            CleanupTables();
+        }
+        [Fact]
+        public void DeleteFileAndItsRelations_2() {
+            SetupAndInsertAllFiles();
+            DeleteFileAtLine(22); // has parent and children
+            Assert.Equal(-1, fc.GetFileID(sampleFiles[22 - 1]));
+            Assert.Equal(-1, fc.GetFilesParentID(sampleFiles[23 - 1]));
+            Assert.Equal(-1, fc.GetFilesParentID(sampleFiles[24 - 1]));
+            Assert.Equal(-1, fc.GetFilesParentID(sampleFiles[25 - 1]));
 
-                var parameter = command.CreateParameter();
-                parameter.ParameterName = "$value";
-                command.Parameters.Add(parameter);
+            Assert.NotEqual(-1, fc.GetFileID(sampleFiles[23 - 1]));
+            Assert.NotEqual(-1, fc.GetFileID(sampleFiles[24 - 1]));
+            Assert.NotEqual(-1, fc.GetFileID(sampleFiles[25 - 1]));
 
-                // Insert a lot of data
-                var random = new Random();
-                for (var i = 0; i < 150_000; i++)
-                {
-                    parameter.Value = random.Next();
-                    command.ExecuteNonQuery();
-                }
+            List<(string, int)> childNamesAndID = fc.GetFileChildren(sampleFiles[5 - 1]);
+            foreach(var nameAndID in childNamesAndID) 
+                Assert.NotEqual(nameAndID.Item1, sampleFiles[22 - 1]);
+            
+            CleanupTables();
+        }
 
-                transaction.Commit();
-            }
-         * 
-         * 
-         */
+        private void DeleteFileAtLine(int line) {
+            fc.DeleteFileOnly(sampleFiles[line - 1]);
+        }
+
+        [Theory]
+        [InlineData(5, new int[] { 5, 6, 7, 8, 22, 23, 24, 94 }, new int[] { 6830, 1, 2, 3 })]
+        [InlineData(22, new int[] { 22, 23, 24 }, new int[] { 5, 6, 7, 8, 94, 6830, 1, 2, 3 })]
+        [InlineData(3, new int[] { 5, 6, 7, 8, 22, 23, 24, 94, 3, 4, 6830, 10, 100, 153, 5043 }, new int[] { 1, 2 })]
+        public void DeleteFileAndChildren(int fileLineToDelete, int[] fileLinesDeleted, int[] fileLinesUnaffected) {
+            SetupAndInsertAllFiles();
+
+            DeleteFileAndChildrenAtLine(fileLineToDelete);
+            foreach (int line in fileLinesDeleted)
+                Assert.Equal(-1, fc.GetFileID(sampleFiles[line - 1]));
+            foreach (int line in fileLinesUnaffected)
+                Assert.NotEqual(-1, fc.GetFileID(sampleFiles[line - 1]));
+
+            CleanupTables();
+        }
+
+        private void DeleteFileAndChildrenAtLine(int line) {
+            fc.DeleteDirectory(sampleFiles[line - 1]);
+        }
 
         [Fact]
-        public void FixFileAndChildrenPath() {
+        public void DeleteListOfFiles() {
+            SetupAndInsertAllFiles();
+            List<string> filesToDelete = new();
+            filesToDelete.Add(sampleFiles[5 - 1]);
+            filesToDelete.Add(sampleFiles[22 - 1]);
+            filesToDelete.Add(sampleFiles[79 - 1]);
+            filesToDelete.Add(sampleFiles[6792 - 1]);
+            fc.DeleteFiles(filesToDelete);
+
+            Assert.Equal(-1, fc.GetFileID(sampleFiles[5 - 1]));
+            Assert.Equal(-1, fc.GetFileID(sampleFiles[22 - 1]));
+            Assert.Equal(-1, fc.GetFileID(sampleFiles[79 - 1]));
+            Assert.Equal(-1, fc.GetFileID(sampleFiles[6792 - 1]));
+
+            Assert.Equal(-1, fc.GetFilesParentID(sampleFiles[6 - 1]));
+            Assert.Equal(-1, fc.GetFilesParentID(sampleFiles[7 - 1]));
+            Assert.Equal(-1, fc.GetFilesParentID(sampleFiles[8 - 1]));
+
+            Assert.NotEqual(-1, fc.GetFileID(sampleFiles[6 - 1]));
+            Assert.NotEqual(-1, fc.GetFileID(sampleFiles[7 - 1]));
+            Assert.NotEqual(-1, fc.GetFileID(sampleFiles[8 - 1]));
+
+            Assert.Equal(-1, fc.GetFilesParentID(sampleFiles[23 - 1]));
+            Assert.Equal(-1, fc.GetFilesParentID(sampleFiles[24 - 1]));
+            Assert.Equal(-1, fc.GetFilesParentID(sampleFiles[25 - 1]));
+
+            Assert.NotEqual(-1, fc.GetFileID(sampleFiles[23 - 1]));
+            Assert.NotEqual(-1, fc.GetFileID(sampleFiles[24 - 1]));
+            Assert.NotEqual(-1, fc.GetFileID(sampleFiles[25 - 1]));
+
+            Assert.NotEqual(-1, fc.GetFilesParentID(sampleFiles[6791 - 1]));
+
+
+            CleanupTables();
+        }
+        [Fact]
+        public void DeleteDrivesInTable() {
+            SetupAndInsertAllFiles();
+            List<string> filesToDelete = new();
+            filesToDelete.Add(sampleFiles[1 - 1]);
+            filesToDelete.Add(sampleFiles[3 - 1]);
+            fc.DeleteDirectories(filesToDelete);
+            Assert.Equal(0, fc.CountFiles());
+            CleanupTables();
+        }
+
+        [Theory]
+        [InlineData(65, @"H:\MusicProj+Song\GuitarPro\GP2\Mysongbook.Guitar.Pro.January.2006(55294.tabs) - Copy",
+            new int[] { 65, 66, 67, 2000, 3000, 4000, 5000, 6000 }, new int[] { 65, 66, 67, 2000, 3000, 4000, 5000, 6000 })]
+        [InlineData(5, @"H:\MusicProj+Song\GuitarPro\GP2",
+            new int[] {}, new int[] { 1, 2, 3, 4, 6795 })]
+        public void RenameOrFixFilePathAndChildren(int lineIndex, string newPath, int[] equal, int[]notEqual) {
+            SetupAndInsertAllFiles();
+            // Can't rename to an existing DB file
+            string oldPath = sampleFiles[lineIndex - 1];
+            fc.ReAdjustFilepathBulk(oldPath, newPath);
+            foreach (int index in equal)
+                Assert.Equal(-1, fc.GetFileID(sampleFiles[index - 1]));
+            foreach (int index in notEqual) {
+                Utils.LogToOutput(sampleFiles[index - 1]);
+                Assert.NotEqual(-1, fc.GetFileID(sampleFiles[index - 1].Replace(oldPath, newPath)));
+            }
+
             // Add all files, then fix a specific file
             //  fail when new path does not exist, succeed when file exists, succeed in searching for and adding child files
 
-
+            CleanupTables();
         }
+
+
+
+
         
-        // fix broken links (user input changing folder to folder)
-
-        // tag
-
-
-        // map expression to AND, OR, NOT AND
-        // like a AND b //// % and \% for actual remainders...
-        // TODO: We need to know what like even means... https://www.sqlitetutorial.net/sqlite-like/  https://www.tutorialspoint.com/sqlite/sqlite_and_or_clauses.htm
-
-        // TODO: Remember that what we need to use ID to search for tagged files (tag relation)
-        //      do we union and search?
-
-        // TODO: We will not use -d+e because it is simply -d -e
-        // query tag regex a* aa b+c -d -d+e is like -d -e?, what does -d+e even mean?
-        // so like a% AND has aa AND has (b or C) and NOT d AND NOT (d or e) = not d and not e so basically -d -e
-
-
     }
 }
+
+
+
+/*
+ * 
+ * https://www.techonthenet.com/sqlite/and_or.php#:~:text=The%20SQLite%20AND%20condition%20and,operations%20in%20Math%20class!)
+ * SELECT p.*
+ * FROM Pizza p
+ * JOIN PT pt ON p.ID = pt.PizzaID
+ * JOIN Toppings t ON pt.ToppingID = t.ID
+ * WHERE t.name LIKE 't%'
+ *  AND (t.name = 'cheese' OR t.name = 'sauce');
+ * 
+ * Another approach
+ * I think one long comparison is better than multiple runs of small comparisons... Disk scanning wise
+ * 
+ * SELECT p.*
+ * FROM Pizza p
+ * JOIN PT pt ON p.ID = pt.PizzaID
+ * WHERE pt.ToppingID IN (SELECT ID FROM Toppings WHERE name LIKE 't%')
+ *      AND pt.ToppingID IN (SELECT ID FROM Toppings WHERE name IN ('cheese', 'sauce'));
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ */

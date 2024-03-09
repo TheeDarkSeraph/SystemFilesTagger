@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "PerformanceCheck": {
+    "PathGenerator": {
       "commandName": "Project"
     }
   }

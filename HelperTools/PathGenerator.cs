@@ -1,5 +1,8 @@
-﻿namespace HelperTools {
-    internal class Program {
+﻿using System.Diagnostics;
+using System.Text;
+
+namespace HelperTools {
+    internal class PathGenerator {
 
 
         public static void PrintParentFirstFileTree(string path, int moreDepth) {
@@ -18,7 +21,7 @@
         static void Main(string[] args) {
             string outputFile = "filepaths.txt";
             FileStream filestream = new FileStream(outputFile, FileMode.Create);
-            var streamwriter = new StreamWriter(filestream);
+            var streamwriter = new StreamWriter(filestream, Encoding.UTF8);
             streamwriter.AutoFlush = true;
             Console.SetOut(streamwriter);
 
@@ -27,7 +30,8 @@
             foreach (string folder in rootFolders)
                 PrintParentFirstFileTree(folder, referralDepth);
             Console.Out.Close();
-            System.Diagnostics.Process.Start("notepad.exe",outputFile);
+            //System.Diagnostics.Process.Start("notepad.exe",outputFile);
+            Process.Start("explorer.exe", "/select," + outputFile);
         }
     }
 }

@@ -6,6 +6,7 @@ using System.Xml.Linq;
 
 namespace FileTagDB.Controllers {
     public partial class DBController {
+        // AC -> AutoConnect to database (has open and close)
         static DBLocationManager lm = DBLocationManager.Instance;
         public static string GetConnPath() {
             return Path.Combine(lm.DBLocation, lm.DBName);
