@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -18,9 +19,7 @@ namespace FileTagDB.Controllers {
         }
         public void TagFiles(int tagID, List<int> fileIDs) { // files are assumed to be in DB
             ConnectDB();
-            foreach(int fileID in fileIDs) {
-                TagFileConnected(tagID, fileID);
-            }
+            TagFilesConnected(tagID, fileIDs);
             DisconnectDB();
             // get all IDs, then untag them
         }
@@ -31,9 +30,7 @@ namespace FileTagDB.Controllers {
         }
         public void UntagFiles(int tagID, List<int> fileIDs) {
             ConnectDB();
-            foreach (int fileID in fileIDs) {
-                UntagFileConnected(tagID, fileID);
-            }
+            UntagFilesConnected(tagID, fileIDs);
             DisconnectDB();
         }
         
@@ -43,9 +40,9 @@ namespace FileTagDB.Controllers {
             using (var cmd = new SQLiteCommand(conn)) {
                 SQLiteDataReader reader = DBController.ExecuteSelect(cmd, 
                     @$"SELECT filep.* FROM {TableConst.filesTName} filep JOIN
-                    {TableConst.fileTagsTName} filetags ON
-                    filetags.{TableConst.fileTagsCoFID} = filep.{TableConst.filesCoID}
-                    WHERE filetags.{TableConst.fileTagsCoTID} = {tagID}
+                    {TableConst.fileTagsTName} ft ON
+                    ft.{TableConst.fileTagsCoFID} = filep.{TableConst.filesCoID}
+                    WHERE ft.{TableConst.fileTagsCoTID} = {tagID}
                 "); // direct child only!
                 while (reader.Read())
                     fileRows.Add(new((string)reader[$"{TableConst.filesCoPath}"], Convert.ToInt32(reader[$"{TableConst.filesCoID}"])));
@@ -53,77 +50,124 @@ namespace FileTagDB.Controllers {
             DisconnectDB();
             return fileRows;
         }
-        public List<(string,int)>GetFilesWithTagQuery(string tagQuery) {
+        public List<(string,int)>GetFilesWithTagQuery(string tagQuery, bool ignoreCase) {
             Utils.LogToOutput("Original query " + tagQuery);
-            tagQuery = AdjustQuery(tagQuery, $"t.{TableConst.tagsCoID}", TableConst.tagsTName, TableConst.tagsCoID, TableConst.tagsCoName);
+            string idPrefix = $"ft.{TableConst.fileTagsCoTID}";
+            tagQuery = AdjustQuery(tagQuery, idPrefix, TableConst.tagsTName, TableConst.tagsCoID, TableConst.tagsCoName);
             Utils.LogToOutput("Translated query " + tagQuery);
             List<(string, int)> fileRows = new();
             ConnectDB();
+            if(!ignoreCase)
+                UseCaseSensitiveLike();
             using (var cmd = new SQLiteCommand(conn)) {
-                SQLiteDataReader reader = DBController.ExecuteSelect(cmd,
-                    @$"SELECT f.* FROM {TableConst.filesTName} f
-                    JOIN {TableConst.fileTagsTName} ft ON ft.{TableConst.fileTagsCoFID} = f.{TableConst.filesCoID}
-                    JOIN {TableConst.tagsTName} t ON filetags.{TableConst.fileTagsCoTID} = t.{TableConst.tagsCoID}
-                    WHERE {tagQuery}
-                "); // direct child only!
-                while (reader.Read())
+                //string oldCmdText = @$"SELECT DISTINCT f.* FROM {TableConst.filesTName} f
+                //    JOIN {TableConst.fileTagsTName} ft ON  f.{TableConst.filesCoID} = ft.{TableConst.fileTagsCoFID}
+                //    WHERE {tagQuery}
+                //";
+
+                string cmdText = JoinQueryAsIntersect(@$"SELECT DISTINCT f.* FROM {TableConst.filesTName} f JOIN {TableConst.fileTagsTName} ft ON  f.{TableConst.filesCoID} = ft.{TableConst.fileTagsCoFID} WHERE ",
+                    tagQuery, idPrefix);
+                SQLiteDataReader reader = DBController.ExecuteSelect(cmd, cmdText); // direct child only!
+                while (reader.Read()) {
                     fileRows.Add(new((string)reader[$"{TableConst.filesCoPath}"], Convert.ToInt32(reader[$"{TableConst.filesCoID}"])));
+                }
             }
             DisconnectDB();
             return fileRows;
         }
+
         // test searching for tags with DB characters where * means '%' and ~ means '_'
         //  and user given '%' and '_' and '/' are all escaped with '/" character first
         // So, escapify characters, then replace with suitable
         // Note we assume here the string is correctly formatted
         // TODO: NOTE: You CANNOT have -a+b , user can't use - ( ) + * ~ for tag names
-        //* 
-        //* SELECT p.*
-        //* FROM Pizza p
-        //* JOIN PT pt ON p.ID = pt.PizzaID
-        //* WHERE pt.ToppingID IN (SELECT ID FROM Toppings WHERE name LIKE 't%')
-        //*      AND pt.ToppingID IN (SELECT ID FROM Toppings WHERE name IN ('cheese', 'sauce'));
-        //* 
-        //* 
         const string endingAnd = " AND";
-        private string AdjustQuery(string tagQuery, string idPrefixed, string tableName, string idCol, string nameCol, bool ignoreCase=false) {
-
-            int addedStringLength = $" {idPrefixed} IN (SELECT {idCol} FROM {tableName} WHERE {nameCol} LIKE SOMETHING){endingAnd}".Length;
+        private string AdjustQuery(string tagQuery, string idPrefixed, string tableName, string idCol, string nameCol) {
+            if (tagQuery.Contains("-") && !AnyWhiteSpace().IsMatch(tagQuery)) // so only one negative query
+                tagQuery = "* " + tagQuery;
+            
+            int addedStringLength = $@" {idPrefixed} IN (SELECT {idCol} FROM {tableName} WHERE {nameCol} LIKE SOMETHING ESCAPE '\'){endingAnd}".Length;
             StringBuilder sb = new StringBuilder();
             // escape the escape character first, then escape the DB characters
-            tagQuery = tagQuery.Replace(@"\", @"\\").Replace("_", @"\_").Replace("%", @"\%")
+            tagQuery = tagQuery.Replace(@"\", @"\\").Replace("'","''").Replace("_", @"\_").Replace("%", @"\%")
                 .Replace('*','%').Replace('~','_');
+
             string[] parts = AnyWhiteSpace().Split(tagQuery);
+            // if all of them are negative, add 1 positive %
+
+
             // a good approximation
             sb.EnsureCapacity(tagQuery.Length + parts.Length * addedStringLength + (7 + addedStringLength) * (Utils.Count(tagQuery, '+')) + 3000); // ( OR )
-
-            foreach (string part in parts) {
-                if (tagQuery.Contains('+')) {
-                    string[] orGroup = part.Split();
-
-                    sb.Append($" {idPrefixed} IN (SELECT {idCol} FROM {tableName} WHERE ");
-                    for (int i = 0; i < orGroup.Length; i++)
-                        orGroup[i] = ignoreCase ? $"LOWER({nameCol}) LIKE LOWER({part})" : $"{nameCol} LIKE {part}";
-                    sb.Append(string.Join(" OR ", orGroup));
-                    sb.Append(")");
-                    sb.Append(endingAnd);
-                } else {
-                    string addNot = string.Empty;
-                    if (tagQuery[0] == '-') {
-                        tagQuery = tagQuery.Substring(1);
-                        addNot = "NOT";
-                    }
-                    if (ignoreCase)
-                        sb.Append($" {idPrefixed} {addNot} IN (SELECT {idCol} FROM {tableName} WHERE LOWER({nameCol}) LIKE LOWER({part})){endingAnd}");
-                    else
-                        sb.Append($" {idPrefixed} {addNot} IN (SELECT {idCol} FROM {tableName} WHERE {nameCol} LIKE {part}){endingAnd}");
-                } 
+            bool allNegative = true;
+            for(int q1=0; q1 < parts.Length; q1++) {
+                string part = parts[q1];
+                if (part[0] != '-')
+                    allNegative = false;
+                AddQuery(sb, part, idPrefixed, tableName, idCol, nameCol);
             }
+            if (allNegative)
+                AddQuery(sb, "%", idPrefixed, tableName, idCol, nameCol);
             sb.Length -= 4;
             return AnyWhiteSpace().Replace(sb.ToString(), " ");
+        }
+        private void AddQuery(StringBuilder sb, string part, string idPrefixed, string tableName, string idCol, string nameCol) {
+            if (part.Contains('+')) {
+                string[] orGroup = part.Split();
+
+                sb.Append($" {idPrefixed} IN (SELECT {idCol} FROM {tableName} WHERE ");
+                for (int i = 0; i < orGroup.Length; i++)
+                    orGroup[i] = $"{nameCol} LIKE '{part}' ESCAPE '\'";
+                sb.Append(string.Join(" OR ", orGroup));
+                sb.Append(")");
+                sb.Append(endingAnd);
+            } else {
+                string addNot = string.Empty;
+                if (part[0] == '-') {
+                    part = part.Substring(1);
+                    addNot = "NOT";
+                }
+                sb.Append($@" {idPrefixed} {addNot} IN (SELECT {idCol} FROM {tableName} WHERE {nameCol} LIKE '{part}' ESCAPE '\'){endingAnd}");
+            }
+        }
+
+        // INTERSECT has precedence over EXCEPT
+        // The result of the INTERSECT operation between b and c will be subtracted from a when using the query a EXCEPT b INTERSECT c.
+        private string JoinQueryAsIntersect(string selectPart, string queryConditions, string idPrefixed) {
+            StringBuilder sb = new();
+            string[] conditions = queryConditions.Split(endingAnd);
+            int notLength = $" {idPrefixed} NOT ".Length;
+            foreach(string condition in conditions) { // regular loop
+                if (!condition.StartsWith($" {idPrefixed} NOT ")) {
+                    sb.Append(selectPart);
+                    sb.Append(condition);
+                }
+                sb.Append(" INTERSECT ");
+            }
+            sb.Length -= 11;// " INTERSECT ".Length;
+            foreach (string condition in conditions) { // regular loop
+                if (condition.StartsWith($" {idPrefixed} NOT ")) {
+                    sb.Length -= 11;
+                    sb.Append(" EXCEPT ");
+                    sb.Append(selectPart);
+                    sb.Append($" {idPrefixed} " + condition.Substring(notLength));
+                }
+            }
+            Utils.LogToOutput("New query : " + sb.ToString());
+            return sb.ToString();
         }
 
         [GeneratedRegex(@"\s+")]
         private static partial Regex AnyWhiteSpace();
     }
+
+
+
+    //* 
+    //* SELECT p.*
+    //* FROM Pizza p
+    //* JOIN PT pt ON p.ID = pt.PizzaID
+    //* WHERE pt.ToppingID IN (SELECT ID FROM Toppings WHERE name LIKE 't%')
+    //*      AND pt.ToppingID IN (SELECT ID FROM Toppings WHERE name IN ('cheese', 'sauce'));
+    //* 
+    //* 
 }

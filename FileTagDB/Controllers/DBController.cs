@@ -42,19 +42,8 @@ namespace FileTagDB.Controllers {
             reader.Close();
             return true;
         }
-        public static object ExecuteScalerAutoConn(string cmdText) {
-            using (var conn = GetDBConnection()) {
-                conn.Open();
-                using (var cmd = new SQLiteCommand(conn)) {
-                    cmd.CommandText = cmdText;
-                    object result = cmd.ExecuteScalar();
-                    conn.Close();
-                    return result;
-                }
-            }
-        }
         public static SQLiteConnection GetDBConnection() {
-            return new SQLiteConnection("Data Source=" +GetConnPath());
+            return new SQLiteConnection("Data Source=" +GetConnPath()+ "");
         }
         public static void CreateDBIfNotExist(string dbLocation, string dbName) {
             if (!DBFileExists(dbLocation, dbName)) { // we fully assume that the file cannot exist without the correct tables
@@ -93,7 +82,11 @@ namespace FileTagDB.Controllers {
                 }
             }
         }
-
+        public static void DeleteTableData(SQLiteConnection conn, string tableName) {
+            using (SQLiteCommand cmd = new SQLiteCommand(conn)) {
+                ExecuteNonQCommand(cmd, "DELETE FROM " + tableName + ";");
+            }
+        }
         /*
          * The ExecuteNonQuery Method returns the number of row(s) affected by either an INSERT, an UPDATE or a DELETE. 
          *      This method is to be used to perform DML (data manipulation language) statements as stated previously.

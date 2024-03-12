@@ -19,6 +19,19 @@ namespace HelperTools {
         }
 
         static void Main(string[] args) {
+            List<string> nT =
+                [
+                    "acting" , "action" , "action_based" , "action_rpg" , "action's" , "action\"s%_@!#$" ,
+                    "active" , "adventure" , "animals" , "Apocalypse" , "beatemup" , "boss_based" , "easy" ,
+                    "fight_based" , "fighting" , "flow" , "grind" , "hard" , "kids" , "platformer" , "roguelike" ,
+                    "roguelite" , "roleplay" , "roleplay_adventure" , "roleplay_solo" , "sad" , "sandbox" ,
+                    "singleplayer" , "solo" , "strategy" , "strategy_based" , "tactics" , "time" , "time_based" , 
+                    "turn_based" , "zoo"
+                ];
+            nT.Sort();
+            Console.WriteLine(string.Join("\" , \"",nT));
+            if (true)
+                return;
             string outputFile = "filepaths.txt";
             FileStream filestream = new FileStream(outputFile, FileMode.Create);
             var streamwriter = new StreamWriter(filestream, Encoding.UTF8);

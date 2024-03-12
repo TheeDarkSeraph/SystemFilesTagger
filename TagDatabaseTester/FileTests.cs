@@ -46,6 +46,7 @@ namespace TagDatabaseTester {
             DataHolder.PopulateFiles();
             sampleFiles = DataHolder.sampleFilePaths;
             fc = new FileController();
+            CreateEmptyTestDBWithTables();
         }
         internal void CreateTestDB() {
             DBController.CreateDBIfNotExist(lm.DBLocation, lm.DBName);
@@ -115,20 +116,12 @@ namespace TagDatabaseTester {
             Assert.Equal(@"H:\MusicProj+Song\GuitarPro", FileController.GetParentPath(testpath));
         }
 
-        //[Fact]
-        //public void printall() {
-        //    foreach(string str in sampleFiles) {
-        //        output.WriteLine(str);
-        //    }
-        //}
-        
         [Fact]
         public void ShouldGetNonExistingFileParent() {
             Assert.Equal("H:\\",FileController.GetParentPath("H:\\MusicProj+Sg22"));
         }
         [Fact]
         public void CreateFile() {
-            CreateEmptyTestDBWithTables();
             AddSingleFileAndVerify(0, 0);
             Assert.Equal(-1, fc.AddFile(sampleFiles[0]));
             CleanupTables();
@@ -143,7 +136,6 @@ namespace TagDatabaseTester {
 
         [Fact]
         public void CreateFilesAndOneConnection() {
-            CreateEmptyTestDBWithTables();
             AddSingleFileAndVerify(0, 0);
             AddSingleFileAndVerify(1, 1);
             AddSingleFileAndVerify(2, 2);
@@ -156,7 +148,6 @@ namespace TagDatabaseTester {
         }
         [Fact]
         public void CreateFilesThenChildFilesWhichWillBeRelated() {
-            CreateEmptyTestDBWithTables();
             FixAllSampleFiles();
             for (int i = 0; i < 100; i++) {
                 AddSingleFileAndVerify(i, i);
@@ -191,7 +182,6 @@ namespace TagDatabaseTester {
         }
         [Fact]
         public void ShouldBulkAddFiles() {
-            CreateEmptyTestDBWithTables();
             FixAllSampleFiles();
             for(int i = 0; i < 10; i++) {
                 Utils.LogToOutput($"File {i+1,-3} {sampleFiles[i]}");
@@ -224,7 +214,6 @@ namespace TagDatabaseTester {
 
         [Fact]
         public void ShouldBulkAddFilesWithPreaddedFiles() {
-            CreateEmptyTestDBWithTables();
             FixAllSampleFiles();
 
             fc.AddFile(sampleFiles[5]); // commenting this line removes the parent
@@ -241,7 +230,6 @@ namespace TagDatabaseTester {
         }
         [Fact]
         public void ShouldBulkAddFilesWithChildsExisting_1() {
-            CreateEmptyTestDBWithTables();
             FixAllSampleFiles();
 
             // having re-inserts (inserting here, then re-inserting below) will be a bit slower (about 60-70% more time)
@@ -263,22 +251,12 @@ namespace TagDatabaseTester {
         [Fact]
         public void ShouldBulkAddFilesWithChildsExisting_RepeatedChilds() {
             // this causes a lot of issues re-inserting things
-            CreateEmptyTestDBWithTables();
             FixAllSampleFiles();
-            for (int i = 0; i < 10; i++) {
-                Utils.LogToOutput($"File {i + 1,-3} {sampleFiles[i]}");
-            }
-            var watch = System.Diagnostics.Stopwatch.StartNew();
-
-
             fc.BulkAddFiles(sampleFiles.Skip(19).ToList()); //w parent 4864 wo parent 4802-4900 // significant improvement
             fc.BulkAddFiles(sampleFiles.Take(22).ToList()); // repeated childs
 
             //sampleFiles.RemoveAt(4);  // removing this will cause issue with verify index, since it does need the order
             fc.BulkAddFiles(sampleFiles); // this causes major delay because it tries to re-insert everything
-            watch.Stop();
-            var elapsedMs = watch.ElapsedMilliseconds;
-            Utils.LogToOutput(elapsedMs.ToString());
 
             // DO update first then next test
 
@@ -289,12 +267,31 @@ namespace TagDatabaseTester {
         //for (int i = 0; i < fileData.Count; i++) {
         //    Utils.LogToOutput(fileData[i].Item2 + " " + fileData[i].Item1);
         //}
-        [Fact]
-        public void ShouldGetAllFilesUnderCertainPath() {
+        [Theory]
+        [InlineData(4, new int[] { 4, 5, 6, 7, 8, 100, 599, 600, 700, 1000, 2400, 4000, 4400, 6400 }, new int[] { 1, 2, 3 })]
+        [InlineData(3, new int[] { 3, 4, 5, 6, 7, 8, 100, 599, 600, 700, 1000, 2400, 4000, 4400, 6400 }, new int[] { 1, 2 })]
+        [InlineData(1, new int[] { 1, 2 }, new int[] { 3, 4, 5, 6, 7, 8, 100, 599, 600, 700, 1000, 2400, 4000, 4400, 6400 })]
+        [InlineData(2, new int[] { 2 }, new int[] { 1, 3, 4, 5, 6, 7, 8, 100, 599, 600, 700, 1000, 2400, 4000, 4400, 6400 })]
+        [InlineData(5, new int[] { 5, 6, 7, 8, 20, 30, 100, 1000, 4000, 6750 }, new int[] { 6790, 6800, 1, 2, 3, 4 })]
+        public void ShouldGetAllFilesUnderCertainPath(int fileLine, int[] existing, int[] nonExisting) {
             // folder and all files in it or in its folder recursively (And the folders)
-            Assert.True(false);
             // TODO: add all files, get files in a certain path... (Getwith path
+            fc.BulkAddFiles(sampleFiles); // this causes major delay because it tries to re-insert everything
+            FixAllSampleFiles();
+            Utils.LogToOutput($"File to search {sampleFiles[fileLine - 1]}");
+            List<(string, int)> files = fc.GetFilesWithPath(sampleFiles[fileLine - 1]);
+            Dictionary<string, int> childFiles = new();
+            for(int i = 0; i < files.Count; i++) {
+                childFiles.Add(files[i].Item1, 1);
+            }
+            foreach (int exist in existing) // assert they exist, but log problem line
+                Assert.Equal(-1,childFiles.ContainsKey(sampleFiles[exist - 1])?-1:exist);
+            
+            foreach (int exist in nonExisting)
+                Assert.Equal(-1, childFiles.ContainsKey(sampleFiles[exist - 1]) ? exist : -1);
 
+
+            CleanupTables();
         }
 
         #endregion
@@ -338,12 +335,9 @@ namespace TagDatabaseTester {
         }
         #endregion
 
-        // TODO: Check renaming speed and validity
-        //
-        // no tags here, just file validity (does it still exists) and parent child links check to see if broken, and possible recursive repair
+        #region Deletion
 
         private void SetupAndInsertAllFiles() {
-            CreateEmptyTestDBWithTables();
             FixAllSampleFiles();
             fc.BulkAddFiles(sampleFiles);
         }
@@ -453,6 +447,7 @@ namespace TagDatabaseTester {
             Assert.Equal(0, fc.CountFiles());
             CleanupTables();
         }
+        #endregion
 
         [Theory]
         [InlineData(65, @"H:\MusicProj+Song\GuitarPro\GP2\Mysongbook.Guitar.Pro.January.2006(55294.tabs) - Copy",
@@ -476,11 +471,6 @@ namespace TagDatabaseTester {
 
             CleanupTables();
         }
-
-
-
-
-        
     }
 }
 

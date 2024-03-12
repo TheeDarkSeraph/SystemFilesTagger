@@ -25,6 +25,24 @@ namespace FileTagDB.Controllers {
             conn = DBController.GetDBConnection();
             conn.Open();
         }
+        private void ActivateForeignKey() {
+            try {
+                using (SQLiteCommand command = new SQLiteCommand("PRAGMA foreign_keys = ON;", conn)) {
+                    command.ExecuteNonQuery();
+                }
+            } catch (Exception e) {
+                Utils.LogToOutput("Error pragma " + e.Message);
+            }
+        }
+        private void UseCaseSensitiveLike() {
+            try {
+                using (SQLiteCommand command = new SQLiteCommand("PRAGMA case_sensitive_like=ON;", conn)) {
+                    command.ExecuteNonQuery();
+                }
+            } catch (Exception e) {
+                Utils.LogToOutput("Error pragma " + e.Message);
+            }
+        }
         private void DisconnectDB() {
             conn.Dispose();
         }
@@ -72,7 +90,13 @@ namespace FileTagDB.Controllers {
         #region Get Tag or their info
         public int CountTags() {
             string cmdText = $"SELECT COUNT({TableConst.tagsCoName}) FROM {TableConst.tagsTName};";
-            object result = DBController.ExecuteScalerAutoConn(cmdText);
+            ConnectDB();
+            object result;
+            using (var cmd = new SQLiteCommand(conn)) {
+                cmd.CommandText = cmdText;
+                result = cmd.ExecuteScalar();
+            }
+            DisconnectDB();
             return Convert.ToInt32(result);
         }
         public string GetTagName(int tagID) {
@@ -103,6 +127,7 @@ namespace FileTagDB.Controllers {
                 return -1;
             return (int)((Int64)result);
         }
+
 
         public List<Tag> GetAllTags() {
             List<Tag> tags = new();
@@ -145,19 +170,21 @@ namespace FileTagDB.Controllers {
 
         #region Delete Tag
         public int DeleteTag(int tagID) {
-            return GetAffectedRowsFromQuery($"DELETE FROM {TableConst.tagsTName} WHERE tid = {tagID}");
+            ConnectDB();
+            ActivateForeignKey();
+            int affected = GetAffectedRowsFromQueryConnected($"DELETE FROM {TableConst.tagsTName} WHERE tid = {tagID}");
+            DisconnectDB();
+            return affected;
         }
         #endregion
 
         #region Query functions
-        public int GetAffectedRowsFromQuery(string cmdText) {
+        private int GetAffectedRowsFromQueryConnected(string cmdText) {
             int rowsAffected = 0;
-            ConnectDB();
             using (var cmd = new SQLiteCommand(conn)) {
                 rowsAffected = DBController.ExecuteNonQCommand(cmd, cmdText);
                 cmd.Dispose();
             }
-            DisconnectDB();
             return rowsAffected;
         }
         public int GetAffectedRowsFromQueries(string cmdText, List<string> paramName, List<string> paramValue) {

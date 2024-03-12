@@ -90,14 +90,13 @@ namespace FileTagDB.Controllers {
                 for (int i = 0; i < affectedRows; i++) {
                     string param = $"$c{i}";
                     sb.Append($" ({parentID},{param}),");
-                    cmd.Parameters.AddWithValue(param, GetFilePathDBC(startID + i));
+                    cmd.Parameters.AddWithValue(param, startID + i);
                 }
                 sb.Length--; // remove last extra comma
                 cmd.CommandText = sb.ToString();
                 affectedRows = cmd.ExecuteNonQuery();
-                //Utils.LogToOutput(string.Format("Rows inserted {0}/{1}", affectedRows, count));
-                cmd.Dispose();
             }
+
         }
 
 
@@ -120,7 +119,7 @@ namespace FileTagDB.Controllers {
                 cmd.CommandText = "SELECT last_insert_rowid();";
                 Int64 LastRowID64 = (Int64)cmd.ExecuteScalar();
                 lastInsertedRowId = (int)LastRowID64;
-                Utils.LogToOutput("Inserted row ID " + lastInsertedRowId);
+                //Utils.LogToOutput("Inserted row ID " + lastInsertedRowId);
             }
             if (-1 == lastInsertedRowId)
                 return -1;
@@ -198,7 +197,7 @@ namespace FileTagDB.Controllers {
         #endregion
 
 
-
+        // TODO: check all selects to be sure they are parameterized (since something like ':' may fail)
         #region Getting File Data
 
         private int GetFileIDDBC(string filepath) {
@@ -243,8 +242,9 @@ namespace FileTagDB.Controllers {
         private List<(string, int)> GetFilesWithPathDBC(string filepath) {
             List<(string, int)> fileRows = new();
             using (var cmd = new SQLiteCommand(conn)) {
+                cmd.Parameters.AddWithValue("$filepath", filepath);
                 SQLiteDataReader reader = DBController.ExecuteSelect(cmd,
-                    @$"SELECT * FROM {TableConst.filesTName} WHERE {TableConst.filesCoPath} LIKE {filepath} || '%'");
+                    @$"SELECT * FROM {TableConst.filesTName} WHERE {TableConst.filesCoPath} LIKE $filepath || '%'");
                 while (reader.Read())
                     fileRows.Add(new((string)reader[$"{TableConst.filesCoPath}"], Convert.ToInt32(reader[$"{TableConst.filesCoID}"])));
             }

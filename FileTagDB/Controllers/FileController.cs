@@ -8,13 +8,28 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Linq;
-using static System.Net.WebRequestMethods;
 
 namespace FileTagDB.Controllers {
+    // TODO: Have custom default tags that are auto added (unmodifiable)
+    /* .extension tagging (depends) .3 -4 letters
+     * no ext
+     * Folders
+     * 
+     * renaming a 'file' and changing its extension will cause change of file extension
+     *  so untag previous tag, then add new tag (folder, no ext, new ext)...
+     * .ext tags can be manually removed. This has to be tested...
+     * This should all be programatically... and manually adjusted
+     * 
+     * So adding file and adding extension should be associated (auto create tags)
+     * 
+     * Maybe we can have the tagging and untaggin of the files separate to avoid confusion
+     * So we first insert the file, then we pass it to a function that would auto tag it
+     * renaming a 'file' will also cause auto tagging
+     * 
+     * 
+     */
+    // TODO: Show start of path, and end of path (file name) in a label below shown files/folders
+    // Add folder icon to folders and files to 
     public partial class FileController {
         SQLiteConnection conn;
         public static int bulkSeparation = 200;
@@ -26,6 +41,15 @@ namespace FileTagDB.Controllers {
         private void ConnectDB() {
             conn = DBController.GetDBConnection();
             conn.Open();
+        }
+        private void ActivateForeignKey() {
+            try {
+                using (SQLiteCommand command = new SQLiteCommand("PRAGMA foreign_keys = ON;", conn)) {
+                    command.ExecuteNonQuery();
+                }
+            } catch (Exception e) {
+                Utils.LogToOutput("Error pragma " + e.Message);
+            }
         }
         private void DisconnectDB() {
             conn.Dispose();
@@ -85,7 +109,7 @@ namespace FileTagDB.Controllers {
         }
 
         public void BulkAddFiles(List<string> p_paths) {
-            Utils.LogToOutput("COUNT OF FILES " + p_paths.Count);
+            //Utils.LogToOutput("COUNT OF FILES " + p_paths.Count);
             List<string> paths = new(p_paths);
             for (int i = 0; i < paths.Count; i++)
                 paths[i] = FixFilePath(paths[i]);
@@ -95,30 +119,34 @@ namespace FileTagDB.Controllers {
             //ft.PrintAll();
             (groups, nodes) = FileGroup.MakeFileGroups(ft.GetRootFiles());
             ConnectDB();
-            //Utils.LogToOutput("Root count of files to be added : "+ft.RootCount);
-            foreach (FileNode node in nodes){
-                int fileID = AddFileDBC(node.Path);
-                if (-1 == fileID)
-                    fileID = GetFileIDDBC(node.Path);
-                if (-1 == fileID) {
-                    Utils.LogToOutput("Problem inserting file path :" + node.Path);
-                    continue;
+
+            using (var transaction = conn.BeginTransaction()) {
+                //Utils.LogToOutput("Root count of files to be added : "+ft.RootCount);
+                foreach (FileNode node in nodes) {
+                    int fileID = AddFileDBC(node.Path);
+                    if (-1 == fileID)
+                        fileID = GetFileIDDBC(node.Path);
+                    if (-1 == fileID) {
+                        Utils.LogToOutput("Problem inserting file path :" + node.Path);
+                        continue;
+                    }
+                    AddNode(fileID, node);
                 }
-                AddNode(fileID, node);
-            }
-            foreach(FileGroup group in groups) {
-                Utils.LogToOutput("Group log");
-                if (group.parentPath == null)
-                    continue;
-                int parentID = GetFileIDDBC(group.parentPath);
-                for (int i = 0; i < group.childNodes.Count; i += bulkSeparation)
-                    MultiNodeInsert(group.childNodes, i, Math.Min(bulkSeparation, group.childNodes.Count - i), parentID, -1 != parentID);
-                foreach (FileNode fn in group.childNodes) {
-                    int nodeID = GetFileIDDBC(fn.Path);
-                    if (-1 == nodeID)
-                        Utils.LogToOutput("Possible problem in Group add Parent: " + group.parentPath);
-                    AddNode(nodeID, fn);
+                foreach (FileGroup group in groups) {
+                    Utils.LogToOutput("Group log");
+                    if (group.parentPath == null)
+                        continue;
+                    int parentID = GetFileIDDBC(group.parentPath);
+                    for (int i = 0; i < group.childNodes.Count; i += bulkSeparation)
+                        MultiNodeInsert(group.childNodes, i, Math.Min(bulkSeparation, group.childNodes.Count - i), parentID, -1 != parentID);
+                    foreach (FileNode fn in group.childNodes) {
+                        int nodeID = GetFileIDDBC(fn.Path);
+                        if (-1 == nodeID)
+                            Utils.LogToOutput("Possible problem in Group add Parent: " + group.parentPath);
+                        AddNode(nodeID, fn);
+                    }
                 }
+                transaction.Commit();
             }
             DisconnectDB();
             ft.ClearAll();
@@ -156,20 +184,24 @@ namespace FileTagDB.Controllers {
         }
         public int GetFileID(string filepath) {
             int fileID;
-            using (conn = DBController.GetDBConnection()) {
-                conn.Open();
-                fileID = GetFileIDDBC(filepath);
-                conn.Close();
-                return fileID;
-            }
+            ConnectDB();
+            fileID = GetFileIDDBC(filepath);
+            DisconnectDB();
+            return fileID;
+        }
+        public List<int>GetFilesIds(List<string> filepaths) {
+            List<int> filesIds = new();
+            ConnectDB();
+            foreach (string filepath in filepaths)
+                filesIds.Add(GetFileIDDBC(filepath));
+            DisconnectDB();
+            return filesIds;
         }
         public string GetFilePath(int fileID) {
-            using (conn = DBController.GetDBConnection()) {
-                conn.Open();
-                string result = GetFilePathDBC(fileID);
-                conn.Close();
-                return result;
-            }
+            ConnectDB();
+            string result = GetFilePathDBC(fileID);
+            DisconnectDB();
+            return result;
         }
         public List<(string, int)> GetFileChildren(string filepath) {
             ConnectDB();
@@ -227,6 +259,7 @@ namespace FileTagDB.Controllers {
         #region File deletion
         public void DeleteFileOnly(string filepath) {
             ConnectDB();
+            ActivateForeignKey();
             DeleteFileDBC(filepath);
             DisconnectDB();
         }
@@ -235,13 +268,16 @@ namespace FileTagDB.Controllers {
         //   if there is a folder that was not included but its subfiles/folders were included they will get Exodiad
         public void DeleteDirectory(string filepath) {
             ConnectDB();
+            ActivateForeignKey();
             DeleteDirectoryDBC(filepath);
             DisconnectDB();
         }
         public void DeleteFiles(List<string> filepaths) {
             ConnectDB();
+            ActivateForeignKey();
             foreach (string path in filepaths)
                 DeleteFileDBC(path);
+            DisconnectDB();
         }
         public void DeleteDirectories(List<string> filepaths) {
             ConnectDB();
@@ -322,7 +358,6 @@ namespace FileTagDB.Controllers {
                         filesGroup[parentPath].childNodes.Add(rootFile);
                     }
                 }
-                Utils.LogToOutput("group/volume/roots " + allGroups.Count + " " + volume.Count + " " + rootFiles.Count);
                 return (allGroups, volume);
             }
         }

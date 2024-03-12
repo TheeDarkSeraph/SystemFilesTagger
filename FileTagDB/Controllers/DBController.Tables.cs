@@ -22,16 +22,16 @@ namespace FileTagDB.Controllers {
               {TableConst.fileTagsCoFID} INTEGER NOT NULL,
               {TableConst.fileTagsCoTID} INTEGER NOT NULL,
               PRIMARY key ({TableConst.fileTagsCoFID},{TableConst.fileTagsCoTID}),
-              FOREIGN KEY ({TableConst.fileTagsCoFID}) REFERENCES {TableConst.filesTName} ({TableConst.filesCoID}) On DELETE CASCADE,
-              FOREIGN KEY ({TableConst.fileTagsCoTID}) REFERENCES {TableConst.tagsTName} ({TableConst.tagsCoID}) On DELETE CASCADE
+              FOREIGN KEY ({TableConst.fileTagsCoFID}) REFERENCES {TableConst.filesTName} ({TableConst.filesCoID}) ON DELETE CASCADE,
+              FOREIGN KEY ({TableConst.fileTagsCoTID}) REFERENCES {TableConst.tagsTName} ({TableConst.tagsCoID}) ON DELETE CASCADE
             );";
         const string fileChildsTCC =@$"
             Create Table {TableConst.fileChildsTName}(
               {TableConst.fileChildsFID} INTEGER NOT NULL,
               {TableConst.fileChildsCID} INTEGER NOT NULL,
               PRIMARY key ({TableConst.fileChildsFID}, {TableConst.fileChildsCID}),
-              FOREIGN KEY ({TableConst.fileChildsFID}) REFERENCES {TableConst.filesTName} ({TableConst.filesCoID}) On DELETE CASCADE,
-              FOREIGN KEY ({TableConst.fileChildsCID}) REFERENCES {TableConst.filesTName} ({TableConst.filesCoID}) On DELETE CASCADE
+              FOREIGN KEY ({TableConst.fileChildsFID}) REFERENCES {TableConst.filesTName} ({TableConst.filesCoID}) ON DELETE CASCADE,
+              FOREIGN KEY ({TableConst.fileChildsCID}) REFERENCES {TableConst.filesTName} ({TableConst.filesCoID}) ON DELETE CASCADE
             );";
         const string fileChildsNonEqualTrigger = @$"
             CREATE TRIGGER IF NOT EXISTS {TableConst.fileChildsConstraintName}
