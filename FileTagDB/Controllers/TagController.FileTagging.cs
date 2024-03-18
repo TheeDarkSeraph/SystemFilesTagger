@@ -33,7 +33,36 @@ namespace FileTagDB.Controllers {
             UntagFilesConnected(tagID, fileIDs);
             DisconnectDB();
         }
-        
+
+
+        public List<int> GetFileTags(string file) {
+            ConnectDB();
+            _fileController.conn = conn;
+            List<int> fileTags = GetFileTagsConnected(_fileController.GetFileIDDBC(file));
+            DisconnectDB();
+            return fileTags;
+        }
+        public List<int> GetFileTags(int fileId) {
+            ConnectDB();
+            List<int> fileTags = GetFileTagsConnected(fileId);
+            DisconnectDB();
+            return fileTags;
+        }
+
+        public List<List<int>> GetFilesTags(List<string> files) {
+            ConnectDB();
+            _fileController.conn = conn;
+            List<List<int>> filesTags= GetFilesTagsConnected(_fileController.GetFilesIds(files));
+            DisconnectDB();
+            return filesTags;
+        }
+        public List<List<int>> GetFilesTags(List<int> fileIds) {
+            ConnectDB();
+            List<List<int>> filesTags= GetFilesTagsConnected(fileIds);
+            DisconnectDB();
+            return filesTags;
+        }
+
         public List<(string,int)> GetFilesWithTag(int tagID) {
             List<(string, int)> fileRows = new();
             ConnectDB();
@@ -83,7 +112,7 @@ namespace FileTagDB.Controllers {
         // TODO: NOTE: You CANNOT have -a+b , user can't use - ( ) + * ~ for tag names
         const string endingAnd = " AND";
         private string AdjustQuery(string tagQuery, string idPrefixed, string tableName, string idCol, string nameCol) {
-            if (tagQuery.Contains("-") && !AnyWhiteSpace().IsMatch(tagQuery)) // so only one negative query
+            if (tagQuery.Contains("-") && !Utils.AnyWhiteSpace().IsMatch(tagQuery)) // so only one negative query
                 tagQuery = "* " + tagQuery;
             
             int addedStringLength = $@" {idPrefixed} IN (SELECT {idCol} FROM {tableName} WHERE {nameCol} LIKE SOMETHING ESCAPE '\'){endingAnd}".Length;
@@ -92,7 +121,7 @@ namespace FileTagDB.Controllers {
             tagQuery = tagQuery.Replace(@"\", @"\\").Replace("'","''").Replace("_", @"\_").Replace("%", @"\%")
                 .Replace('*','%').Replace('~','_');
 
-            string[] parts = AnyWhiteSpace().Split(tagQuery);
+            string[] parts = Utils.AnyWhiteSpace().Split(tagQuery);
             // if all of them are negative, add 1 positive %
 
 
@@ -108,7 +137,7 @@ namespace FileTagDB.Controllers {
             if (allNegative)
                 AddQuery(sb, "%", idPrefixed, tableName, idCol, nameCol);
             sb.Length -= 4;
-            return AnyWhiteSpace().Replace(sb.ToString(), " ");
+            return Utils.AnyWhiteSpace().Replace(sb.ToString(), " ");
         }
         private void AddQuery(StringBuilder sb, string part, string idPrefixed, string tableName, string idCol, string nameCol) {
             if (part.Contains('+')) {
@@ -156,8 +185,9 @@ namespace FileTagDB.Controllers {
             return sb.ToString();
         }
 
-        [GeneratedRegex(@"\s+")]
-        private static partial Regex AnyWhiteSpace();
+        public object GetTagID(Func<object, int> value) {
+            throw new NotImplementedException();
+        }
     }
 
 

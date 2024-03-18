@@ -12,7 +12,7 @@ namespace FileTagDB.Controllers {
         //      the public functions will connect and call connected
 
         #region Adding multiple files
-        private void AddNode(int fileID, FileNode node) {
+        internal void AddNode(int fileID, FileNode node) {
             // We want to add ALL the files with the one insert
             AddFileChilds(GetFilePathDBC(fileID), fileID); // in case previous children exists in the database to this file
             if (node.children.Count == 0) {
@@ -37,7 +37,7 @@ namespace FileTagDB.Controllers {
                 AddNode(nodeID, fn);
             }
         }
-        private void MultiNodeInsert(List<FileNode> children, int start, int count, int parentID, bool hasParent = true) {
+        internal void MultiNodeInsert(List<FileNode> children, int start, int count, int parentID, bool hasParent = true) {
             // TODO: Add the IDs
             if (count == 0)
                 return;
@@ -61,7 +61,7 @@ namespace FileTagDB.Controllers {
             // insert the parent child relation with IDs
             AssociateChildrenWithParentFile(children, affectedRows, lastInsertedRowId, parentID, sb);
         }
-        private (int, int) BulkInsertMultipleFileEntries(List<FileNode> children, int start, int count, StringBuilder sb) { //re-use of sb
+        internal (int, int) BulkInsertMultipleFileEntries(List<FileNode> children, int start, int count, StringBuilder sb) { //re-use of sb
             int affectedRows = -1;
             int lastInsertedRowId = -1;
             using (var cmd = new SQLiteCommand(conn)) {
@@ -83,7 +83,7 @@ namespace FileTagDB.Controllers {
             }
             return (affectedRows, lastInsertedRowId);
         }
-        private void AssociateChildrenWithParentFile(List<FileNode> children, int affectedRows, int lastInsertedRowId, int parentID, StringBuilder sb) {
+        internal void AssociateChildrenWithParentFile(List<FileNode> children, int affectedRows, int lastInsertedRowId, int parentID, StringBuilder sb) {
             using (var cmd = new SQLiteCommand(conn)) {
                 sb.Append($"INSERT INTO {TableConst.fileChildsTName} ({TableConst.fileChildsFID},{TableConst.fileChildsCID}) VALUES");
                 int startID = lastInsertedRowId - affectedRows + 1;
@@ -104,7 +104,7 @@ namespace FileTagDB.Controllers {
 
         #region Adding single file
 
-        private int AddFileDBC(string filepath) {
+        internal int AddFileDBC(string filepath) {
             filepath = FixFilePath(filepath);
             if (GetParentPath(filepath) == "")
                 return -1;
@@ -127,11 +127,11 @@ namespace FileTagDB.Controllers {
             return lastInsertedRowId;
         }
 
-        private void AddFileConnections(string filepath, int fileID) {
+        internal void AddFileConnections(string filepath, int fileID) {
             AddFileParent(filepath, fileID);
             AddFileChilds(filepath, fileID);
         }
-        private void AddFileParent(string filepath, int fileID) {
+        internal void AddFileParent(string filepath, int fileID) {
             string? parentPath = GetParentPath(filepath);
             if (parentPath == null)
                 return;
@@ -139,7 +139,7 @@ namespace FileTagDB.Controllers {
             if (-1 != parentFileID)
                 AddOneFileRelation(parentFileID, fileID);
         }
-        private void AddOneFileRelation(int parentFileID, int fileID) {
+        internal void AddOneFileRelation(int parentFileID, int fileID) {
             using (var cmd = new SQLiteCommand(conn)) {
                 cmd.Parameters.AddWithValue("$parent", parentFileID);
                 cmd.Parameters.AddWithValue("$child", fileID);
@@ -151,7 +151,7 @@ namespace FileTagDB.Controllers {
                 cmd.Dispose();
             }
         }
-        private void AddFileChilds(string filepath, int fileID) {
+        internal void AddFileChilds(string filepath, int fileID) {
             //if (FileAttributes.Directory == (FileAttributes.Directory & File.GetAttributes(filepath)))
             if (!filepath.EndsWith(Path.DirectorySeparatorChar)) { filepath += Path.DirectorySeparatorChar; }
             using (var cmd = new SQLiteCommand(conn)) {
@@ -173,7 +173,7 @@ namespace FileTagDB.Controllers {
 
 
         // TODO: This might need a fix
-        private void AddMultipleFileRelation(int parentFileID, SQLiteDataReader reader) {
+        internal void AddMultipleFileRelation(int parentFileID, SQLiteDataReader reader) {
             using (var transaction = conn.BeginTransaction()) {
                 while (reader.Read()) {
                     var command = conn.CreateCommand(); // we create a new command each time because a unique error cause it to permenantly fail
@@ -200,7 +200,7 @@ namespace FileTagDB.Controllers {
         // TODO: check all selects to be sure they are parameterized (since something like ':' may fail)
         #region Getting File Data
 
-        private int GetFileIDDBC(string filepath) {
+        internal int GetFileIDDBC(string filepath) {
             object? result;
             string cmdText = $"SELECT  {TableConst.filesCoID} FROM {TableConst.filesTName} WHERE {TableConst.filesCoPath} = $filepath";
             bool success;
@@ -214,7 +214,7 @@ namespace FileTagDB.Controllers {
             return (int)((Int64)result);
         }
 
-        private string GetFilePathDBC(int fileID) {
+        internal string GetFilePathDBC(int fileID) {
             object? result;
             string cmdText = $"SELECT  {TableConst.filesCoPath} FROM {TableConst.filesTName} WHERE {TableConst.filesCoID} = {fileID};";
             bool success;
@@ -225,7 +225,7 @@ namespace FileTagDB.Controllers {
             return (string)result;
         }
 
-        private List<(string, int)> GetFileChildrenDBC(int fileID) {
+        internal List<(string, int)> GetFileChildrenDBC(int fileID) {
             List<(string, int)> fileRows = new();
             using (var cmd = new SQLiteCommand(conn)) {
                 SQLiteDataReader reader = DBController.ExecuteSelect(cmd,
@@ -239,7 +239,7 @@ namespace FileTagDB.Controllers {
             }
             return fileRows;
         }
-        private List<(string, int)> GetFilesWithPathDBC(string filepath) {
+        internal List<(string, int)> GetFilesWithPathDBC(string filepath) {
             List<(string, int)> fileRows = new();
             using (var cmd = new SQLiteCommand(conn)) {
                 cmd.Parameters.AddWithValue("$filepath", filepath);
@@ -253,7 +253,7 @@ namespace FileTagDB.Controllers {
         #endregion
 
         #region Updating filepath
-        private void RenameFilePathDBC(string oldPath, string newPath) {
+        internal void RenameFilePathDBC(string oldPath, string newPath) {
             using (var cmd = new SQLiteCommand(conn)) {
                 cmd.Parameters.AddWithValue("$oldPath", oldPath);
                 cmd.Parameters.AddWithValue("$newPath", newPath);
@@ -264,11 +264,11 @@ namespace FileTagDB.Controllers {
         #endregion
 
         #region File Deletion
-        private void DeleteParentLinkDBC(int fileID) {
+        internal void DeleteParentLinkDBC(int fileID) {
             using (var cmd = new SQLiteCommand(conn))
                 DBController.ExecuteNonQCommand(cmd, $"DELETE FROM {TableConst.fileChildsTName} WHERE {TableConst.fileChildsCID} = {fileID} ");
         }
-        private void DeleteFileDBC(string filepath) {
+        internal void DeleteFileDBC(string filepath) {
             filepath = FixFilePath(filepath);
             int fileID = GetFileIDDBC(filepath);
             if (-1 == fileID) return;
@@ -278,7 +278,7 @@ namespace FileTagDB.Controllers {
             }
         }
 
-        private void DeleteDirectoryDBC(string filepath) {
+        internal void DeleteDirectoryDBC(string filepath) {
             filepath = FixFilePath(filepath);
             int fileID = GetFileIDDBC(filepath);
             if (-1 == fileID) return;

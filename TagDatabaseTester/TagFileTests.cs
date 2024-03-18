@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Xunit.Abstractions;
 using System.Data.SQLite;
 using FileTagDB.Models;
+using System.Collections;
 
 namespace TagDatabaseTester {
     [Collection("Sequential")] // this stops the parallel with other classes named the same
@@ -585,7 +586,75 @@ namespace TagDatabaseTester {
 
 
 
+        [Fact]
+        public void ShouldGetFileTags() {
+            // return list of tag ids
+            lock (tc) {
+                // First we tag a file with multiple tags, then we retrieve its tags
+                // generate random integers, tag them to a file, verify that the file has those tags
+                Random rnd = new Random();
+                List<Tag> tags = tc.GetAllTags().OrderBy(x => rnd.Next()).Take(12).ToList();
+                List<int> tagIds = tags.Select(x => x.id).ToList();
+                int fileId = fc.GetFileID(sampleFiles[10]);
+                tagIds.ForEach(tagId => tc.TagFile(tagId,fileId));
+                
+                tagIds.Sort();
+                List<int> fileTags = tc.GetFileTags(sampleFiles[10]);
+                fileTags.Sort();
+                Assert.Equal(fileTags, tagIds);
+                
+                fileTags = tc.GetFileTags(fileId);
+                fileTags.Sort();
+                Assert.Equal(fileTags, tagIds);
 
+                ClearTagFiles();
+            }
+        }
+        [Fact]
+        public void ShouldListOfFilesAssociatedTagsIndividually() { // return list of list
+            lock (tc) {
+                // same as above but with multiple files
+                Random rnd = new Random();
+                List<List<int>> filesTagsIdsExpected = new();
+                List<int> fileIds = new();
+                List<string> files = [sampleFiles[3], sampleFiles[8], sampleFiles[13]];
+                files.ForEach(filename => {
+                    List<Tag> tags = tc.GetAllTags().OrderBy(x => rnd.Next()).Take(12).ToList();
+                    List<int> tagIds = tags.Select(x => x.id).ToList();
+
+                    int fileId = fc.GetFileID(filename);
+                    tagIds.ForEach(tagId => tc.TagFile(tagId, fileId));
+                });
+
+                var watch = System.Diagnostics.Stopwatch.StartNew();
+                List<List<int>> filesTagsIdsActual = tc.GetFilesTags(files);
+                watch.Stop();
+                Utils.LogToOutput("gettags with file names: " + watch.ElapsedMilliseconds);
+
+
+                Assert.Equal(filesTagsIdsActual.Count,filesTagsIdsExpected.Count);
+                for(int i = 0; i < filesTagsIdsExpected.Count; i++) {
+                    filesTagsIdsExpected[i].Sort();
+                    filesTagsIdsActual[i].Sort();
+                    Assert.Equal(filesTagsIdsActual, filesTagsIdsExpected);
+                }
+                // now with ids
+                watch = System.Diagnostics.Stopwatch.StartNew();
+                filesTagsIdsActual = tc.GetFilesTags(fileIds);
+                watch.Stop();
+                Utils.LogToOutput("gettags with file ids: " + watch.ElapsedMilliseconds);
+
+                Assert.Equal(filesTagsIdsActual.Count, filesTagsIdsExpected.Count);
+                for (int i = 0; i < filesTagsIdsExpected.Count; i++) {
+                    filesTagsIdsExpected[i].Sort();
+                    filesTagsIdsActual[i].Sort();
+                    Assert.Equal(filesTagsIdsActual, filesTagsIdsExpected);
+                }
+
+
+                ClearTagFiles();
+            }
+        }
 
 
         // map expression to AND, OR, NOT AND

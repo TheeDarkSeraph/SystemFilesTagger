@@ -31,7 +31,7 @@ namespace FileTagDB.Controllers {
     // TODO: Show start of path, and end of path (file name) in a label below shown files/folders
     // Add folder icon to folders and files to 
     public partial class FileController {
-        SQLiteConnection conn;
+        internal SQLiteConnection conn;
         public static int bulkSeparation = 200;
         public const int expectedPathLength = 70;
         public FileController() {
@@ -64,7 +64,12 @@ namespace FileTagDB.Controllers {
             return filepath;
         }
         public static string? GetParentPath(string filepath) {
-            DirectoryInfo d = new DirectoryInfo(filepath); // works on non existing files
+            DirectoryInfo d; // works on non existing files
+            try {
+                d = new DirectoryInfo(filepath);
+            } catch {
+                return string.Empty;
+            }
             if (d.Parent == null) {
                 //Utils.LogToOutput("Folder/File is root : " + filepath);
                 return null;

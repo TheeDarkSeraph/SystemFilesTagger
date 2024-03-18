@@ -10,18 +10,18 @@ using System.Transactions;
 
 namespace FileTagDB.Controllers {
     public partial class TagController {
-        public void TagFileConnected(int tagID, int fileID) {
+        internal void TagFileConnected(int tagId, int fileId) {
             using (var cmd = new SQLiteCommand(conn)) {
-                cmd.Parameters.AddWithValue("$fileid", fileID);
-                cmd.Parameters.AddWithValue("$tagid", tagID);
+                cmd.Parameters.AddWithValue("$fileid", fileId);
+                cmd.Parameters.AddWithValue("$tagid", tagId);
                 DBController.ExecuteNonQCommand(cmd, $"INSERT INTO {TableConst.fileTagsTName} " +
                     $"({TableConst.fileTagsCoFID} , {TableConst.fileTagsCoTID}) VALUES ($fileid , $tagid)");
             }
         }
 
-        public void TagFilesConnected(int tagID, List<int> fileIDs) {
+        internal void TagFilesConnected(int tagId, List<int> fileIds) {
             using (var transaction = conn.BeginTransaction()) {
-                foreach (int fileID in fileIDs) {
+                foreach (int fileID in fileIds) {
                     var command = conn.CreateCommand(); // we create a new command each time because a unique error cause it to permenantly fail
                     command.CommandText = $"INSERT INTO {TableConst.fileTagsTName} " +
                     $"({TableConst.fileTagsCoFID} , {TableConst.fileTagsCoTID}) VALUES ($fileid , $tagid)";
@@ -33,7 +33,7 @@ namespace FileTagDB.Controllers {
                     command.Parameters.Add(parameter2);
                     try {
                         parameter1.Value = fileID;
-                        parameter2.Value = tagID;
+                        parameter2.Value = tagId;
                         command.ExecuteNonQuery();
                     } catch (Exception e) {
                         Utils.LogToOutput("tag multiple file error is " + e);
@@ -43,18 +43,18 @@ namespace FileTagDB.Controllers {
             }
         }
 
-        public void UntagFileConnected(int tagID, int fileID) {
+        internal void UntagFileConnected(int tagId, int fileId) {
             using (var cmd = new SQLiteCommand(conn)) {
-                cmd.Parameters.AddWithValue("$fileid", fileID);
-                cmd.Parameters.AddWithValue("$tagid", tagID);
+                cmd.Parameters.AddWithValue("$fileid", fileId);
+                cmd.Parameters.AddWithValue("$tagid", tagId);
                 DBController.ExecuteNonQCommand(cmd, $"DELETE FROM {TableConst.fileTagsTName} " +
                     $" WHERE {TableConst.fileTagsCoFID} =  $fileid AND {TableConst.fileTagsCoTID} =  $tagid");
             }
         }
 
-        public void UntagFilesConnected(int tagID, List<int> fileIDs) {
+        internal void UntagFilesConnected(int tagId, List<int> fileIds) {
             using (var transaction = conn.BeginTransaction()) {
-                foreach (int fileID in fileIDs) {
+                foreach (int fileID in fileIds) {
                     var command = conn.CreateCommand(); // we create a new command each time because a unique error cause it to permenantly fail
                     command.CommandText = $"DELETE FROM {TableConst.fileTagsTName} " +
                     $" WHERE {TableConst.fileTagsCoFID} =  $fileid AND {TableConst.fileTagsCoTID} =  $tagid";
@@ -66,12 +66,36 @@ namespace FileTagDB.Controllers {
                     command.Parameters.Add(parameter2);
                     try {
                         parameter1.Value = fileID;
-                        parameter2.Value = tagID;
+                        parameter2.Value = tagId;
                         command.ExecuteNonQuery();
                     } catch (Exception) { }
                 }
                 transaction.Commit();
             }
+        }
+
+        internal List<int> GetFileTagsConnected(int fileId) {
+            List<int> fileTags = new();
+
+            using (var cmd = new SQLiteCommand(conn)) {
+                cmd.Parameters.AddWithValue("$fileid", fileId);
+                SQLiteDataReader reader = DBController.ExecuteSelect(cmd, $"SELECT {TableConst.fileTagsCoTID} FROM {TableConst.fileTagsTName} " +
+                    $" WHERE {TableConst.fileTagsCoFID} =  $fileid ");
+                while (reader.Read()) {
+                    fileTags.Add(Convert.ToInt32(reader[$"{TableConst.fileTagsCoTID}"]));
+                }
+            }
+
+            return fileTags;
+        }
+        internal List<List<int>> GetFilesTagsConnected(List<int> fileIds) {
+            List<List<int>> filesTags = new();
+            using (var transaction = conn.BeginTransaction()) {
+                foreach (int id in fileIds)
+                    filesTags.Append(GetFileTagsConnected(id));
+                transaction.Commit();
+            }
+            return filesTags;
         }
 
 
