@@ -11,7 +11,8 @@ namespace FileTagDB {
             // see https://aka.ms/applicationconfiguration.
             ApplicationConfiguration.Initialize();
             // The folder for the roaming current user 
-            string folder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            //string folder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            string folder = "./";
             // Combine the base folder with your specific folder....
             string specificFolder = Path.Combine(folder, "TagManager");
             // CreateDirectory will check if every folder in path exists and, if not, create them.
@@ -21,7 +22,7 @@ namespace FileTagDB {
             DBLocationManager lm = DBLocationManager.Instance;
             lm.DBLocation = specificFolder;
             lm.DBName = dbName;
-            DBController.CreateDBIfNotExist(specificFolder,dbName);
+            DBController.CreateDBIfNotExist(specificFolder, dbName);
             Application.Run(new FileAndTagsManager());
         }
 

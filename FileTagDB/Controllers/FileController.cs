@@ -94,6 +94,7 @@ namespace FileTagDB.Controllers {
                 paths[i] = FixFilePath(paths[i]);
             FileTree ft = new(paths);
             ConnectDB();
+            using (var transaction = conn.BeginTransaction()) {
                 //Utils.LogToOutput("Root count of files to be added : "+ft.RootCount);
                 for (int i = 0; i < ft.RootCount; i++) {
                     FileNode node = ft[i];
@@ -106,6 +107,8 @@ namespace FileTagDB.Controllers {
                     }
                     AddNode(fileID, node);
                 }
+                transaction.Commit();
+            }
             DisconnectDB();
             ft.ClearAll();
             // we need to be smart about this

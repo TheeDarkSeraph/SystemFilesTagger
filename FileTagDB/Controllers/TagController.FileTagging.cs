@@ -35,6 +35,16 @@ namespace FileTagDB.Controllers {
         }
 
 
+
+
+
+        // TODO: This one
+        public void RemoveFilesWithoutTags() {
+            ConnectDB();
+            ActivateForeignKey();
+            RemoveFilesWithoutTagsConnected();
+            DisconnectDB();
+        }
         public List<int> GetFileTags(string file) {
             ConnectDB();
             _fileController.conn = conn;

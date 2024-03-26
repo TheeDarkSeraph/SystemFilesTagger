@@ -29,12 +29,25 @@ namespace FileTagDB {
             return count;
         }
         public static string? GetFileExtension(string file) {
-            if (file.Contains(".")) {
-                return file.Substring(file.LastIndexOf("."));
+            if (file.Contains(".") && file[file.Length - 1] != '.') { // does not end with a dot
+                return file.Substring(file.LastIndexOf(".")).ToLower();
             } else {
                 return null;
             }
 
+        }
+        public static string ShortenFileName(string file) {
+            if (file.Length <= 18)
+                return file;
+            string fileStart = file.Substring(0, 8)+"..";
+            file = file.Substring(8);
+            string fileEnd = "";
+            if (file.Contains(Path.PathSeparator)) {
+                fileEnd = file.Substring(file.LastIndexOf(Path.PathSeparator));
+            } else {
+                fileEnd = file.Substring(file.Length - 10, 10); // should have enough characters
+            }
+            return fileStart + fileEnd;
         }
 
         public static string GetShortcutTarget(string file) {
@@ -84,6 +97,7 @@ namespace FileTagDB {
                 return string.Empty;
             }
         }
+
         [GeneratedRegex(@"\s+")]
         public static partial Regex AnyWhiteSpace();
     }

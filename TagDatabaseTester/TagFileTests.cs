@@ -20,7 +20,7 @@ namespace TagDatabaseTester {
         static FileController fc = new();
         static TagController tc;
         static bool hasInitialized = false;
-        
+
         static bool addedFilesAndTags = false;
 
 
@@ -226,14 +226,14 @@ namespace TagDatabaseTester {
                 List<Tag> allTagList = tc.GetAllTags();
                 Dictionary<string, int> tagIDs = new();
                 List<(string, int)> taggedFiles;
-                
+
                 foreach (Tag tag in allTagList)
                     tagIDs.Add(tag.name, tag.id);
-                List<string> filepaths= new();
+                List<string> filepaths = new();
                 List<int> fileIdsShouldbeTagged;
                 List<(string, int)> filesInFolder;
                 List<int> fileIdsInFolder = new();
-                foreach(int fileline in taggedFilesLine)
+                foreach (int fileline in taggedFilesLine)
                     filepaths.Add(sampleFiles[fileline - 1]);
 
 
@@ -243,22 +243,22 @@ namespace TagDatabaseTester {
                 filesInFolder = fc.GetFilesWithPath(sampleFiles[parentFolderLine - 1]);
                 foreach (var file in filesInFolder)
                     fileIdsInFolder.Add(file.Item2);
-                
+
 
                 tc.TagFiles(tagID, fileIdsInFolder);
-                
+
 
                 taggedFiles = tc.GetFilesWithTag(tagIDs[sampleTags[tagIndex]]);
                 HashSet<int> setOftaggedFilesIds = new HashSet<int>();
-                foreach(var fileID in taggedFiles)
+                foreach (var fileID in taggedFiles)
                     setOftaggedFilesIds.Add(fileID.Item2);
-                foreach(int shouldBeTagged in fileIdsShouldbeTagged)
+                foreach (int shouldBeTagged in fileIdsShouldbeTagged)
                     Assert.Contains(shouldBeTagged, setOftaggedFilesIds);
 
                 ClearTagFiles();
             }
         }
-        
+
         // tag multiple files (non tagged with the tag)
         [Theory]
         [InlineData(0, new int[] { 1, 2 })]
@@ -383,7 +383,7 @@ namespace TagDatabaseTester {
 
                 filesInFolder = fc.GetFilesWithPath(sampleFiles[parentFolderLine - 1]);
                 watch.Stop();
-                Utils.LogToOutput("Getting file with path time "+watch.ElapsedMilliseconds);
+                Utils.LogToOutput("Getting file with path time " + watch.ElapsedMilliseconds);
 
                 foreach (var file in filesInFolder)
                     fileIdsInFolder.Add(file.Item2);
@@ -411,7 +411,7 @@ namespace TagDatabaseTester {
 
 
         [Theory]
-        [InlineData(0, 1,2, new int[] { 2 })]
+        [InlineData(0, 1, 2, new int[] { 2 })]
         public void ShouldUntagPath(int tagIndex, int parentFolderLine, int folderLineToUntag, int[] untaggedFilesLine) {
             lock (tc) {
                 List<Tag> allTagList = tc.GetAllTags();
@@ -457,7 +457,7 @@ namespace TagDatabaseTester {
 
         private List<string> SubListFiles(int startLine, int endLine) {
             List<string> files = new();
-            for(int i = startLine - 1; i < endLine; i++)
+            for (int i = startLine - 1; i < endLine; i++)
                 files.Add(sampleFiles[i]);
             return files;
         }
@@ -475,30 +475,30 @@ namespace TagDatabaseTester {
          */
         // Here we write it how we expect the user to write it
         [Theory]
-        [InlineData("action_rpg -acting", 5, new int[] { 0 },false, new int[] { 3 })]
-        
+        [InlineData("action_rpg -acting", 5, new int[] { 0 }, false, new int[] { 3 })]
+
         [InlineData("a*", 15, new int[] { }, false, new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8 })]
         [InlineData("A*", 15, new int[] { }, false, new int[] { 9 })]
-        
-        [InlineData("a*", 15, new int[] { },true, new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 })]
+
+        [InlineData("a*", 15, new int[] { }, true, new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 })]
         [InlineData("A*", 15, new int[] { }, true, new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 })]
 
-        [InlineData("*a*", 15, new int[] { },false, new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 17, 19, 22, 23, 24, 25, 26, 27, 29, 30, 31, 33, 34 })]
+        [InlineData("*a*", 15, new int[] { }, false, new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 17, 19, 22, 23, 24, 25, 26, 27, 29, 30, 31, 33, 34 })]
 
         [InlineData("r* t*", 15, new int[] { }, false, new int[] { 20, 21, 22, 23, 24 }, new int[] { 31, 32, 33, 34 })]
         [InlineData("r* t* -role*", 15, new int[] { 22, 23, 24 }, false, new int[] { 20, 21, 22, 23, 24 }, new int[] { 31, 32, 33, 34 })]
 
-        [InlineData("a* -act*", 15, new int[] { 0, 1, 2, 3, 4, 5, 6 },false, new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8 })]
+        [InlineData("a* -act*", 15, new int[] { 0, 1, 2, 3, 4, 5, 6 }, false, new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8 })]
         [InlineData("acting fighting strategy", 15, new int[] { }, false, new int[] { 0 }, new int[] { 14 }, new int[] { 29 })]
 
 
 
-        public void GetFilesWithTagSearchCombination(string query, int filestep, int[]excludedIndicies, bool ignoreCase, params int[][] includedIndicies) {
+        public void GetFilesWithTagSearchCombination(string query, int filestep, int[] excludedIndicies, bool ignoreCase, params int[][] includedIndicies) {
             lock (tc) {
                 // for this test I think it is better to create our tags and test the queries ourselves
                 // act* act___ a* A* (one ignore case 'A' and one dont)
-                
-                List<string> nT=
+
+                List<string> nT =
                 [   // 0           1            2               3             4               5
                     "acting" , "action" , "action_based" , "action_rpg" , "action's" , "action\"s%_@!#$" ,
                     // 6            7            8            9             10            11          12
@@ -533,7 +533,7 @@ namespace TagDatabaseTester {
                 // NOTE: This can be optimized twice, first opt, is to get all ids at once and split list send
                 //          2nd would require a function call tagfiles to take a list of tags and specify steps (it would be custom
                 for (int i = 0; i < nT.Count; i++) {
-                    tc.TagFiles(tagIDs[nT[i]], fc.GetFilesIds(SubListFiles(filestart + i*step, filestart + i * step + nT.Count)));
+                    tc.TagFiles(tagIDs[nT[i]], fc.GetFilesIds(SubListFiles(filestart + i * step, filestart + i * step + nT.Count)));
                     //Utils.LogToOutput($"This tag {nT[i]} with files from lines {filestart + i * step} to {filestart + i * step + nT.Count}");
                 }
                 watch.Stop();
@@ -545,7 +545,7 @@ namespace TagDatabaseTester {
                 //
                 watch = System.Diagnostics.Stopwatch.StartNew();
 
-                List<(string,int)> filesGot = tc.GetFilesWithTagQuery(query, ignoreCase);
+                List<(string, int)> filesGot = tc.GetFilesWithTagQuery(query, ignoreCase);
                 watch.Stop();
                 Utils.LogToOutput("compound query time " + watch.ElapsedMilliseconds);
 
@@ -556,7 +556,7 @@ namespace TagDatabaseTester {
                         linesContained.Add(filesLines[filesGot[i].Item1]);
                     } catch { }
                 }
-                List<SortedSet<int>> intersections= new();
+                List<SortedSet<int>> intersections = new();
                 foreach (int[] unionIndicies in includedIndicies) {
                     SortedSet<int> unionSet = new SortedSet<int>();
                     foreach (int index in unionIndicies) {
@@ -568,7 +568,7 @@ namespace TagDatabaseTester {
                 }
                 SortedSet<int> linesToHave = new();
                 linesToHave.UnionWith(intersections[0]);
-                for(int i = 1; i < intersections.Count; i++)
+                for (int i = 1; i < intersections.Count; i++)
                     linesToHave.IntersectWith(intersections[1]);
                 foreach (int index in excludedIndicies) {
                     int endj = filestart + index * step + nT.Count;
@@ -576,7 +576,7 @@ namespace TagDatabaseTester {
                         linesToHave.Remove(j);
                 }
                 Utils.LogToOutput("Compare: ");
-                Utils.LogToOutput(string.Join(",",linesToHave));
+                Utils.LogToOutput(string.Join(",", linesToHave));
                 Utils.LogToOutput("Got: ");
                 Utils.LogToOutput(string.Join(",", linesContained));
                 Assert.Equal(linesToHave, linesContained);
@@ -596,13 +596,13 @@ namespace TagDatabaseTester {
                 List<Tag> tags = tc.GetAllTags().OrderBy(x => rnd.Next()).Take(12).ToList();
                 List<int> tagIds = tags.Select(x => x.id).ToList();
                 int fileId = fc.GetFileID(sampleFiles[10]);
-                tagIds.ForEach(tagId => tc.TagFile(tagId,fileId));
-                
+                tagIds.ForEach(tagId => tc.TagFile(tagId, fileId));
+
                 tagIds.Sort();
                 List<int> fileTags = tc.GetFileTags(sampleFiles[10]);
                 fileTags.Sort();
                 Assert.Equal(fileTags, tagIds);
-                
+
                 fileTags = tc.GetFileTags(fileId);
                 fileTags.Sort();
                 Assert.Equal(fileTags, tagIds);
@@ -632,8 +632,8 @@ namespace TagDatabaseTester {
                 Utils.LogToOutput("gettags with file names: " + watch.ElapsedMilliseconds);
 
 
-                Assert.Equal(filesTagsIdsActual.Count,filesTagsIdsExpected.Count);
-                for(int i = 0; i < filesTagsIdsExpected.Count; i++) {
+                Assert.Equal(filesTagsIdsActual.Count, filesTagsIdsExpected.Count);
+                for (int i = 0; i < filesTagsIdsExpected.Count; i++) {
                     filesTagsIdsExpected[i].Sort();
                     filesTagsIdsActual[i].Sort();
                     Assert.Equal(filesTagsIdsActual, filesTagsIdsExpected);
@@ -656,6 +656,44 @@ namespace TagDatabaseTester {
             }
         }
 
+
+        // TODO: Make this into a theory, list the files that will be tagged, and how many random tags
+        //          to add to the file
+        /* So, number of files to tag, number of tags for each one, number of files remaining
+         * 
+         * 
+         * 
+         * 
+         */
+        [Theory]
+        [InlineData(0, new int[0])]
+        [InlineData(1, new int[] { 4})]
+        [InlineData(4, new int[] { 1,3,2,6})]
+
+        public void ShouldDeleteUntaggedFilesFromDB(int filesToTag, int[] tagsPerFile) {
+            Assert.Equal(filesToTag, tagsPerFile.Length);
+            foreach(int x in tagsPerFile)
+                Assert.True(x > 0);
+            Random rnd = new Random();
+            var tagOriginalList = tc.GetAllTags().OrderBy(x => rnd.Next());
+            sampleFiles = sampleFiles.OrderBy(x => rnd.Next()).ToList();
+            lock (tc) {
+                int start = 0;
+                for (int i = 0; i < filesToTag; i++) {
+                    int fileId = fc.GetFileID(sampleFiles[i]); // randomly ordered file list
+                    List<int> tagIds = tagOriginalList.Skip(start).Take(tagsPerFile[i]).Select(x => x.id).ToList();
+                    start += tagsPerFile[i];
+                    tagIds.ForEach(tagId => tc.TagFile(tagId, fileId));
+                }
+                tc.RemoveFilesWithoutTags();
+
+                Assert.Equal(filesToTag, fc.CountFiles());
+
+                // Reset for doing test again...
+                ClearTagFiles();
+                fc.BulkAddFiles(sampleFiles); // since we will delete
+            }
+        }
 
         // map expression to AND, OR, NOT AND
         // like a AND b //// % and \% for actual remainders...

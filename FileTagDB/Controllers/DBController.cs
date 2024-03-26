@@ -48,6 +48,7 @@ namespace FileTagDB.Controllers {
         public static void CreateDBIfNotExist(string dbLocation, string dbName) {
             if (!DBFileExists(dbLocation, dbName)) { // we fully assume that the file cannot exist without the correct tables
                 Utils.LogToOutput("Location of run " + Directory.GetCurrentDirectory());
+                Debug.WriteLine("Creating db file");
                 SQLiteConnection.CreateFile(Path.Combine(dbLocation, dbName));
                 using (var conn = GetDBConnection()) {
                     CreateTablesAutoConn(conn); // we will not handle user meddling...
@@ -55,7 +56,7 @@ namespace FileTagDB.Controllers {
             }
         }
         public static bool DBFileExists(string dbLocation, string dbName) {
-            return File.Exists(dbLocation + dbName);
+            return File.Exists(Path.Combine(dbLocation,dbName));
         }
         public static bool DBConnectionOk(string dbLocation, string dbName) {
             Utils.LogToOutput("Location of run " + Directory.GetCurrentDirectory());

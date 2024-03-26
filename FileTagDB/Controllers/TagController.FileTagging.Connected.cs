@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Data.SQLite;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -22,6 +23,8 @@ namespace FileTagDB.Controllers {
         internal void TagFilesConnected(int tagId, List<int> fileIds) {
             using (var transaction = conn.BeginTransaction()) {
                 foreach (int fileID in fileIds) {
+                    if (fileID == -1)
+                        continue;
                     var command = conn.CreateCommand(); // we create a new command each time because a unique error cause it to permenantly fail
                     command.CommandText = $"INSERT INTO {TableConst.fileTagsTName} " +
                     $"({TableConst.fileTagsCoFID} , {TableConst.fileTagsCoTID}) VALUES ($fileid , $tagid)";
@@ -55,6 +58,8 @@ namespace FileTagDB.Controllers {
         internal void UntagFilesConnected(int tagId, List<int> fileIds) {
             using (var transaction = conn.BeginTransaction()) {
                 foreach (int fileID in fileIds) {
+                    if (fileID == -1)
+                        continue;
                     var command = conn.CreateCommand(); // we create a new command each time because a unique error cause it to permenantly fail
                     command.CommandText = $"DELETE FROM {TableConst.fileTagsTName} " +
                     $" WHERE {TableConst.fileTagsCoFID} =  $fileid AND {TableConst.fileTagsCoTID} =  $tagid";
@@ -92,12 +97,19 @@ namespace FileTagDB.Controllers {
             List<List<int>> filesTags = new();
             using (var transaction = conn.BeginTransaction()) {
                 foreach (int id in fileIds)
-                    filesTags.Append(GetFileTagsConnected(id));
+                    filesTags.Add(GetFileTagsConnected(id));
                 transaction.Commit();
             }
             return filesTags;
         }
 
-
+        internal void RemoveFilesWithoutTagsConnected() {
+            using (var cmd = new SQLiteCommand(conn)) {
+                int filesDeleted=DBController.ExecuteNonQCommand(cmd, 
+                    $"DELETE FROM {TableConst.filesTName} WHERE {TableConst.filesCoID} NOT IN (" +
+                    $"SELECT DISTINCT {TableConst.fileTagsCoFID} FROM {TableConst.fileTagsTName})");
+                Utils.LogToOutput("files deleted " + filesDeleted);
+            }
+        }
     }
 }
