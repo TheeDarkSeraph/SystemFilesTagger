@@ -61,7 +61,7 @@ namespace FileTagDB {
         /// </summary>     
         TreeNode customTagsNode;
 
-        readonly Color defaultNodeColor = Color.FromArgb(224,224,224);
+        readonly Color defaultNodeColor = Color.FromArgb(224, 224, 224);
         readonly Color someSelectedNodeColor = Color.YellowGreen;
 
         /// <summary>
@@ -94,7 +94,7 @@ namespace FileTagDB {
         /// </summary>
         Dictionary<string, Icon> extensionIcon = new();
 
-        
+
         // for threading the tag task
         Task? tagAdjustingTask = null;
         CancellationTokenSource tagAdjCancelTokenSource;
@@ -130,11 +130,12 @@ namespace FileTagDB {
             } catch { defaultFolderIcon = defaultFileIcon; }
             fileListView.MouseDoubleClick += FileItem_MouseDoubleClick;
             currentPathTextBox.OnShortcutChosen += CallGoToPath;
-            
+
             //fileViewList.SelectedIndexChanged += FilesSelectedChanged;
             fileListView.MouseUp += FileListView_MouseUp;
             tagTextBox.KeyDown += TagTextBox_EnterKeyDown;
-
+            tagSearchBox.KeyDown += SearchTagBox_EnterKeyDown;
+            StartPosition = FormStartPosition.CenterScreen;
         }
 
         #region Handling the treeview nodes and their functionallity
@@ -257,7 +258,7 @@ namespace FileTagDB {
             // First build a set of tags, and tag to file dictionary
             HashSet<string> extTags = new();
             Dictionary<string, List<int>> filesWithTag = new();
-            for(int i = 0; i < filePaths.Count; i++) {
+            for (int i = 0; i < filePaths.Count; i++) {
                 if (!File.Exists(filePaths[i])) // not a file I think
                     continue;
                 string? ext = Utils.GetFileExtension(filePaths[i]);
@@ -270,13 +271,13 @@ namespace FileTagDB {
                 filesWithTag[ext].Add(fileIds[i]);
             }
             bool refreshNodeList = false;
-            foreach(string tag in extTags) {
+            foreach (string tag in extTags) {
                 int tagId = -1;
                 if (!tagsNameToId.ContainsKey(tag)) {
                     tagId = tc.CreateTag(tag);
                     tagsInDB.Add(new(tagId, tag));
                     tagsNameToId.Add(tag, tagId);
-                    tagsIdToName.Add(tagId,tag);
+                    tagsIdToName.Add(tagId, tag);
                     refreshNodeList = true;
                 }
                 tagId = tagsNameToId[tag];
@@ -330,7 +331,7 @@ namespace FileTagDB {
                     "Cant add tag", MessageBoxButtons.OK);
                 return;
             }
-            tagsInDB.Add(new Tag(id,tagToAdd));
+            tagsInDB.Add(new Tag(id, tagToAdd));
             tagsIdToName[id] = tagToAdd;
             tagsNameToId[tagToAdd] = id;
             FilterNodes(tagFilterTextBox.Text);
@@ -338,6 +339,10 @@ namespace FileTagDB {
         private void RemoveTag_Clicked(object sender, EventArgs e) {
 
             string tagToRemove = tagTextBox.Text.Trim();
+            if (tagToRemove.Length == 0)
+                return;
+
+
             if (Utils.AnyWhiteSpace().IsMatch(tagToRemove) || tagToRemove.Contains("+")) {
                 MessageBox.Show("Tags can't have spaces or '+', as they are used for tag search",
                     "Invalid operation", MessageBoxButtons.OK);
@@ -407,6 +412,12 @@ namespace FileTagDB {
             await CancelOrFinishTagAdjustment(); //gets cancelled in double click
             tagAdjCancelTokenSource = new CancellationTokenSource(); // previous was marked canceled from the above
             tagAdjustingTask = Task.Run(() => AdjustTagsThread(tagAdjCancelTokenSource), tagAdjCancelTokenSource.Token);
+            if (fileListView.SelectedIndices.Count > 0) {
+                selectedFileLabel.Text = "File: " + currentActiveFiles[fileListView.SelectedIndices[0]];
+                fixMissingFileBtn.Enabled = fileListView.SelectedIndices.Count == 1 &&
+                    !File.Exists(currentActiveFiles[fileListView.SelectedIndices[0]]) &&
+                    !Directory.Exists(currentActiveFiles[fileListView.SelectedIndices[0]]);
+            }
         }
         private async Task CancelOrFinishTagAdjustment() {
             if (tagAdjustingTask == null)
@@ -415,7 +426,7 @@ namespace FileTagDB {
                 if (tagAdjCancelTokenSource != null)
                     tagAdjCancelTokenSource.Cancel();
                 await tagAdjustingTask;
-            }catch(Exception exc) {
+            } catch (Exception exc) {
                 Debug.WriteLine("canceling or finishing tag Exception " + exc.Message);
             }
         }
@@ -424,7 +435,7 @@ namespace FileTagDB {
                 await Task.Delay(dblClickSleepTimeMillis, tokenSource.Token);
                 fileListView.Invoke(AdjustSelectedFilesTags);
                 Debug.WriteLine("Invokation fired!");
-            }catch(Exception exc) {
+            } catch (Exception exc) {
                 Debug.WriteLine("canceling delay Exception " + exc.Message);
             }
         }
@@ -436,14 +447,14 @@ namespace FileTagDB {
                 return;
             }
             List<string> filesSelected = GetSelectedFiles(false);
-            List<List<int>> filesTagIds= tc.GetFilesTags(filesSelected);
+            List<List<int>> filesTagIds = tc.GetFilesTags(filesSelected);
             HashSet<int> allTags = new();
             HashSet<int> tagsInAll = new();
-            HashSet<int> fileTagIds= new();
+            HashSet<int> fileTagIds = new();
             foreach (int tagId in filesTagIds[0])
                 tagsInAll.Add(tagId);
             allTags.UnionWith(tagsInAll);
-            for(int i = 1; i < filesTagIds.Count; i++) {
+            for (int i = 1; i < filesTagIds.Count; i++) {
                 foreach (int tagId in filesTagIds[i])
                     fileTagIds.Add(tagId);
                 allTags.UnionWith(fileTagIds);
@@ -455,12 +466,6 @@ namespace FileTagDB {
             foreach (int tagId in tagsInAll)
                 activeTagsContainedInAllSelected.Add(tagsIdToName[tagId]);
             FilterNodes(tagFilterTextBox.Text);
-            // TODO: Adjust tags here
-            // step 1, load necessary info
-            // step 2, apply tag filters
-
-            // TODO: Adjust tag filter to comply with current tags
-
         }
         #endregion
 
@@ -499,12 +504,16 @@ namespace FileTagDB {
 
         #region File browsing and navigation
         private void GoToPreviousFile_BtnClicked(object sender, MouseEventArgs e) {
+            isSearchingTags = false;
+
             currentPreviousFile--;
             previousFileBtn.Enabled = currentPreviousFile > 0;
             nextFileBtn.Enabled = true;
             LoadDirectoryInListView(browsedFiles[currentPreviousFile]);
         }
         private void GoToNextFile_BtnClicked(object sender, MouseEventArgs e) {
+            isSearchingTags = false;
+
             previousFileBtn.Enabled = true;
             currentPreviousFile++;
             LoadDirectoryInListView(browsedFiles[currentPreviousFile]);
@@ -515,23 +524,9 @@ namespace FileTagDB {
             GoToPath(null, new());
         }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         private void GoToPath(object? sender, EventArgs e) {
             isSearchingTags = false;
+
             currentPathTextBox.Text = currentPathTextBox.Text.Trim();
             if (currentPathTextBox.Text == string.Empty) {
                 MessageBox.Show("Can't go to an empty path", "Empty Path", MessageBoxButtons.OK);
@@ -541,38 +536,8 @@ namespace FileTagDB {
             BrowseDirectory(path);
         }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         private void BrowseDirectory(string path) {
-            if (isSearchingTags) {
-                // TODO: Complete things here...
-            } else {
-
-
-            }
-
-
-
+            isSearchingTags = false;
 
             if (!File.Exists(path) && !Directory.Exists(path)) {
                 MessageBox.Show("Invalid path, maybe you are lacking permission to view file", "Invalid Path", MessageBoxButtons.OK);
@@ -603,7 +568,6 @@ namespace FileTagDB {
             }
             ReadjustFileList();
         }
-
         private void ReadjustFileList() {
             // TODO: if file info is null, or path does not exist then add full path with red
             fileListView.Clear();
@@ -628,35 +592,40 @@ namespace FileTagDB {
             if (fileListView.SelectedItems.Count < 1)
                 return;
             string filepath = currentActiveFiles[fileListView.SelectedItems[0].Index];
+
+            if (!File.Exists(filepath) && !Directory.Exists(filepath)) {
+                MessageBox.Show("The file chosen does not exists, nothing to do here.", "Invalid operation", MessageBoxButtons.OK);
+                return;
+            }
             if (Directory.Exists(filepath) && browseFolderRadioBtn.Checked) {
                 BrowseDirectory(filepath);
                 return;
             }
+
 
             string shortcutTarget = string.Empty;
             if (filepath.EndsWith(".lnk")) {
                 shortcutTarget = Utils.GetShortcutTarget(filepath);
             }
 
-            if (shortcutTarget!=null && shortcutTarget != string.Empty) { // is shortcut
+            if (shortcutTarget != null && shortcutTarget != string.Empty) { // is shortcut
                 Debug.WriteLine("Target link " + shortcutTarget);
                 string? parent = FileController.GetParentPath(shortcutTarget);
                 if (parent != null && parent != string.Empty) {
                     BrowseDirectory(parent);
                 } else {
-                    if(!File.Exists(shortcutTarget)&&!Directory.Exists(shortcutTarget))
+                    if (!File.Exists(shortcutTarget) && !Directory.Exists(shortcutTarget))
                         Process.Start("explorer.exe", filepath);
                     else {
                         BrowseDirectory(shortcutTarget);
                     }
                 }
             } else {
-                //Process.Start("explorer.exe", filepath); // will try to open the file
-                Process.Start("explorer.exe", "/select,"+filepath);
+                Process.Start("explorer.exe", filepath); // will try to open the file
+                //Process.Start("explorer.exe", "/select,"+filepath); 
+                // this selects the file (this is not useful since we give user clipboard...)
             }
         }
-
-
         private void GoToParent_Clicked(object sender, MouseEventArgs e) {
             if (currentPath != string.Empty) {
                 string? parent = FileController.GetParentPath(currentPath);
@@ -679,10 +648,159 @@ namespace FileTagDB {
 
 
 
+        // TODO: Show the full path of selected file (first selected index only), or no file selected (put a label for it)
+
+        #region Searching tagged files
+        // TODO: view search result of files, and mark searching tags as true
+        //          when user searches the search bar, mark searching tags as false
+        //      Depending on certain "radio button checks" we will call update the browsing
+        //          with files containing certain features
+        // Adjust browsing to call "Tagged browsing" functions
+        //      we could separate this part into another class
+
+        // TODO: Adjust the searching tags boolean in regular browsing class
+        bool isSearchingTags = false;
+        string lastTagSearched = "";
+        private void SearchTagBox_EnterKeyDown(object? sender, KeyEventArgs e) {
+            if (e.KeyCode == Keys.Enter)
+                SearchTag_Clicked(sender, e);
+        }
+        private void SearchTag_Clicked(object? sender, EventArgs e) {
+            if (!CheckTagQueryValidity())
+                return;
+            currentPathTextBox.Text = "*Tag Search*";
+            isSearchingTags = true;
+            lastTagSearched = tagSearchBox.Text;
+            List<(string, int)> fileData = tc.GetFilesWithTagQuery(tagSearchBox.Text, ignoreCaseCheck.Checked);
+            currentActiveFiles.Clear();
+            foreach ((string, int) fileEntry in fileData)
+                currentActiveFiles.Add(fileEntry.Item1);
+            FilterNodes(tagFilterTextBox.Text);
+            ReadjustFileListTagMode();
+        }
+        private void ReadjustFileListTagMode() {
+            // TODO: if file info is null, or path does not exist then add full path with red
+            fileListView.Clear();
+            fileIconsImageList.Images.Clear();
+            int filesAdded = 0;
+            foreach (string filepath in currentActiveFiles) {
+                //Debug.WriteLine("HERE ! " + filepath);
+                Icon? fileIcon = GetFileIcon(filepath);
+                if (fileIcon == null)
+                    fileIcon = defaultFileIcon;
+                fileIconsImageList.Images.Add(fileIcon);
+                ListViewItem? item = fileListView.Items.Add(Utils.ShortenFileName(filepath), filesAdded);
+
+                if (!File.Exists(filepath) && !Directory.Exists(filepath))
+                    item.ForeColor = Color.DarkRed;
+
+                filesAdded++;
+            }
+            AdjustSelectedFilesTags();
+        }
+        private bool CheckTagQueryValidity() {
+            tagSearchBox.Text = Utils.AnyWhiteSpace().Replace(tagSearchBox.Text, " ").Trim();
+            string query = tagSearchBox.Text;
+            if (query == string.Empty)
+                return false;
+            string[] parts = Utils.AnyWhiteSpace().Split(query);
+            bool validTags = true;
+            string errorMsg = "";
+            foreach (string tag in parts) {
+                if (tag[0] == '+') {
+                    errorMsg = "Can't start with '+'";
+                    validTags = false;
+                    break;
+                }
+                if (tag.Contains("++") || tag.Contains("-+") || tag.Contains("**")) {
+                    errorMsg = "Can't have '++' or '-+' or '**'";
+                    validTags = false;
+                    break;
+                }
+                if (tag[0] == '-') {
+                    if (tag.Length == 1) {
+                        errorMsg = "'-' can't be a tag";
+                        validTags = false;
+                        break;
+                    }
+                    if (tag[1] == '-') {
+                        errorMsg = "Can't start with --";
+                        validTags = false;
+                        break;
+                    }
+                    if (tag.Contains("+")) {
+                        errorMsg = "Exclusions can't contain '+' because it is meaningless";
+                        validTags = false;
+                        break;
+                    }
+                }
+            }
+            if (!validTags) {
+                MessageBox.Show(errorMsg, "Invalid search, please fix", MessageBoxButtons.OK);
+            }
+            return validTags;
+        }
 
 
+        //void BrowseFilesInFolder() {
+        //    currentPathTextBox.Text = "path/";
+        //    // load files under the folder directly if it is a folder and the folder exists    
+        //    // otherwise just show a copyable link path
+        //}
+        //void BrowseFilesInPath() {
+        //    currentPathTextBox.Text = "path/*";
+        //    // load files under the folder's path if it is a folder and the folder exists
+        //    // otherwise just show a copyable link path
+        //}
 
 
+        #endregion
+
+        private void CopyToClipboard(object sender, EventArgs e) {
+            if (fileListView.SelectedIndices.Count > 0)
+                Clipboard.SetText(currentActiveFiles[fileListView.SelectedIndices[0]]);
+        }
+
+        private void RemoveFiles_Clicked(object sender, EventArgs e) {
+            if (fileListView.SelectedIndices.Count < 1)
+                return;
+            List<string> filesToTag = GetSelectedFiles(false);
+            fc.DeleteFiles(filesToTag);
+
+            if (isSearchingTags) {
+                tagSearchBox.Text = lastTagSearched;
+                SearchTag_Clicked(sender, e);
+            }
+            // remove from active files the selected ones...
+        }
+        private void FixMissingFile_Clicked(object sender, EventArgs e) {
+            DialogResult result = MessageBox.Show("Is this supposed to be a file (Not a folder)?", "File or folder", MessageBoxButtons.YesNo);
+            if (result == DialogResult.Yes) {
+                OpenFileDialog ofd = new();
+                ofd.Multiselect = false;
+                if (ofd.ShowDialog() == DialogResult.OK) {
+                    fc.ReAdjustFilepathBulk(currentActiveFiles[fileListView.SelectedIndices[0]], ofd.FileName);
+                    currentActiveFiles[fileListView.SelectedIndices[0]] = ofd.FileName;
+                    fixMissingFileBtn.Enabled = false;
+                    ReadjustFileListTagMode();
+                }
+            } else {
+                FolderBrowserDialog fbd = new();
+                if (fbd.ShowDialog() == DialogResult.OK) {
+                    fc.ReAdjustFilepathBulk(currentActiveFiles[fileListView.SelectedIndices[0]], fbd.SelectedPath);
+                    currentActiveFiles[fileListView.SelectedIndices[0]] = fbd.SelectedPath;
+                    fixMissingFileBtn.Enabled = false;
+                    ReadjustFileListTagMode();
+                }
+            }
+            // show dialog to choose a file/folder
+
+            // fixMissingFileBtn = false
+        }
+
+        private void Help_Clicked(object sender, EventArgs e) {
+            new ProgramGuide().Show();
+        }
 
 
         #region Handling Icon getting
@@ -809,7 +927,6 @@ namespace FileTagDB {
             return icon;
         }
         #endregion
-
 
 
 

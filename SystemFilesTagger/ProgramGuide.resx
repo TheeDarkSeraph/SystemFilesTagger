@@ -1,0 +1,222 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!--
+    Microsoft ResX Schema 
+
+    Version 2.0
+
+    The primary goals of this format is to allow a simple XML format
+    that is mostly human readable. The generation and parsing of the
+    various data types are done through the TypeConverter classes
+    associated with the data types.
+
+    Example:
+
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+
+    There are any number of "resheader" rows that contain simple
+    name/value pairs.
+
+    Each data row contains a name, and value. The row also contains a
+    type or mimetype. Type corresponds to a .NET class that support
+    text/value conversion through the TypeConverter architecture.
+    Classes that don't support this are serialized and stored with the
+    mimetype set.
+
+    The mimetype is used for serialized objects, and tells the
+    ResXResourceReader how to depersist the object. This is currently not
+    extensible. For a given mimetype the value must be set accordingly:
+
+    Note - application/x-microsoft.net.object.binary.base64 is the format
+    that the ResXResourceWriter will generate, however the reader can
+    read any of the formats listed below.
+
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="textBox1.Text" xml:space="preserve">
+    <value>
+                            * What is it? *
+This is a file tagging system (as the name suggests), it helps you tag your files so that you can find them later.
+You can think of tagging as categorizing the files. The difference between you organizing files in folders and this is that you can apply multiple tags (categories) to the same file in one location and access it later through any of the chosen tags.
+
+                            *** How things work ***
+
+                            * Adjusting tags *
+First of all, you need to add tags. The right part of the window has a panel which will contain all the tags included in the system. You can freely add and remove any tag.
+Adding and removing tags can be done in the text box below the list of tags. There are some constraints on adding the tags like no white space, no + sign and you can't start with a - sign
+You can also delete tags by selecting them and pressing delete highlighted.
+
+File extension tags are separated to be easier to look through. You should not worry about it though as it is added by default (The tag and the tagging).
+When you tag a file (explained below), the tag is applied to file. And if the file is not a folder, the extension of the file (if the program can find an extension in the name) will be added to the file as a tag.
+The extension is created as a tag automatically if it does not exist, you can remove it from the file, but if you retag the file with anything it will be added again automatically (Better not to go against the flow here, as it will be tedious).
+
+                            * Tag Filter *
+You can filter the current tags by typing the letter sequence you are looking for inside the tags, and the tags will be reduced to what matches your search criteria.
+This does not delete any tag, it only reduces the number of displayed according to what your searching for.
+It is instantly updated per text change
+
+                            * Browsing files *
+Once you have tags to add, the upper most row of items is used to browse through your files and folders like a regular file browser.
+You can write the path yourself in the textbox and press go, there is also a dropdown list for the drives/volumes and a few shortcut for windows users that you can use.
+You can also browse the folder through the browse button, to open a dialog to look for the folder you want to go to yourself.
+
+The up arrow goes to the parent directory of the current directory, the left and right are for previous and next (respectively) browsed directories in the history
+Files show up in the large panel on the left (in the middle next to the tag lest panel), you can double click a file to open it and a link (shortcut) to browse its location.
+You can double click a folder to browse it or open its location and show it in your system's file explorer, depending on the choice you make (above it)
+
+                            * Tagging files *
+When you select a group of files in the file view window. The tags applied to this file are shown on the right (it takes a 0.5 second delay to update on purpose, to see if you'll double click).
+If you select multiple files, some of them having a tag and some don't, that tag will be highlighted in green to show that it is not applied on all the files.
+If a tag is applied to all files the label will be the default color. If the box is checked that means the tag is applied, if not then it is not applied.
+
+You can tag and untag files, by checking and unchecking the boxes.
+
+                            * Searching tags *
+This is the core feature of the program. When looking for something from what you've added through tags, you can use the tag search text box (2nd top one).
+You can use '*' to indicate a wild card (any set of characters), you can also start a tag with '-' to indicate to exclude it from the search.
+
+For example:  music -.ogg
+This will bring all files &amp; folders tagged with music, but not tagged with .ogg
+
+Doing this : -tagname
+will result in this query : * -tagname
+which is bring everything with a tag as long as it does not contain the tag 'tagname'
+
+Remember that the search is in an "And" basis. This means if you write: Music Movie Text
+It will search for things with all 3 tags "Music" "Movie" and "Text".
+If you which to search for something with any use '+' : Music+Movie+Text
+You can combine this with other criteria : Music+Movie+Text -action 2022
+This makes the previous search exclude 'action' tag, and will only get things with 2022 tag
+
+The tagging and search process were designed to help the user find what he wants faster. If you don't remember a tag, search for it in the filter first.
+You can do this too : m*
+which means everything that starts with 'm'
+
+Files that no longer exist in their location on the system will have a red text to indicate that they couldn't be found, they can either be fixed or deleted.
+
+                            *** Additional features ***
+
+                            * Clipboard *
+You can copy to your clipboard the file path displayed below the file view window, through the button. It is the same as doing ctrl+c but faster. It will apply on the path shown only, no matter how many files you select.
+
+                            * Remove selected files *
+This removes the selected files from the program's system. Meaning that they purge along with whatever tags they had from the program's data (untill you readd them).
+
+Please note that there is no undo, every action is permanent once it is applied. Though nothing will every be affected in your system (There is no lines of deleting in our code, except for our data file itself).
+
+                            * Fix missing file *
+If you rename a file, or you move a database to another computer (Along with its data by copying the whole folder), the files added and their tags will linger.
+This "Fix missing file" button is a feature to allow readjusting a missing file/folder location. For example if you give someone the program with its data, and give it some folder that you organized.
+They too can organize that folder without much effort. First they will search for the tag that the parent folder has, it will show up as missing. Using the fix missing file button, you can tell it the folder's new location (Say 'No' to the dialog to indicate a folder).
+Once that happens, the folder and the files in the program's system are renamed to match the new folder's location. So now you have not only recovered the folder with its tags, you also recovered all the files inside it (recursively) with their tags in the system.
+(Only the ones that were in the system will be fixed). You can do this on a file by file basis, but it is easier if they were moved in one folder, and you fix that folder.
+
+You can only fix a missing file, if you select multiple files, only if the first selected one is missing can you press the fix missing button.
+
+(I still did not decide if I want to export and import into a file)
+
+                            * Tagging folders applies tag to all files under its path *
+Be careful that this command will take time depending on your system, and is not advices to be applied on folder with tens of thousands of inner files and folders.
+IT WILL WORK, but just note that it will take a lot of time. You aren't meant to put all of the files in your system here, some of it is just garbage to us users.
+
+                            * Remove untagged files in DB *
+This does what it says, files will stay once they are added inside the database, unless you remove them (with the remove selected button).
+So files without tags can't be found (I think there is no way to search them in the tags, I could be wrong). And their existence does not add value while not having any tags.
+This button will purge all files without any tag from the system (remember that files with extensions are tags).
+You will not really find such files, unless you personally untag all of them from all their tags. Which it would be easier to just select and remove them (through the remove selected button).
+
+Please add feedback on what you think can be good to add, and what is missing.
+Also what is bad and hard to work with
+
+                            * NOTE *
+There is no paging (splitting files into pages), although I think it would have a demand in the future, I decided it is not time to add it yet.
+
+
+
+</value>
+  </data>
+</root>

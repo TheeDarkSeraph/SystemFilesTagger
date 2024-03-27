@@ -40,17 +40,12 @@
             button6 = new Button();
             button7 = new Button();
             tagTextBox = new TextBox();
-            radioButton3 = new RadioButton();
-            radioButton4 = new RadioButton();
-            label4 = new Label();
             label5 = new Label();
-            radioButton5 = new RadioButton();
             label6 = new Label();
-            label7 = new Label();
             label8 = new Label();
             button13 = new Button();
             button14 = new Button();
-            button15 = new Button();
+            fixMissingFileBtn = new Button();
             label9 = new Label();
             tagFilterTextBox = new TextBox();
             label10 = new Label();
@@ -65,6 +60,9 @@
             cleanDBBtn = new Button();
             button8 = new Button();
             ignoreCaseCheck = new CheckBox();
+            selectedFileLabel = new Label();
+            button9 = new Button();
+            label4 = new Label();
             panel1.SuspendLayout();
             SuspendLayout();
             // 
@@ -75,7 +73,7 @@
             button1.FlatAppearance.BorderSize = 0;
             button1.FlatStyle = FlatStyle.Flat;
             button1.ForeColor = Color.FromArgb(224, 224, 224);
-            button1.Location = new Point(664, 16);
+            button1.Location = new Point(719, 16);
             button1.Name = "button1";
             button1.Size = new Size(56, 23);
             button1.TabIndex = 0;
@@ -111,7 +109,7 @@
             tagSearchBox.ForeColor = Color.White;
             tagSearchBox.Location = new Point(138, 44);
             tagSearchBox.Name = "tagSearchBox";
-            tagSearchBox.Size = new Size(422, 23);
+            tagSearchBox.Size = new Size(477, 23);
             tagSearchBox.TabIndex = 4;
             // 
             // currentPathTextBox
@@ -122,7 +120,7 @@
             currentPathTextBox.ForeColor = Color.White;
             currentPathTextBox.Location = new Point(138, 16);
             currentPathTextBox.Name = "currentPathTextBox";
-            currentPathTextBox.Size = new Size(452, 23);
+            currentPathTextBox.Size = new Size(507, 23);
             currentPathTextBox.TabIndex = 5;
             // 
             // button2
@@ -132,7 +130,7 @@
             button2.FlatAppearance.BorderSize = 0;
             button2.FlatStyle = FlatStyle.Flat;
             button2.ForeColor = Color.FromArgb(224, 224, 224);
-            button2.Location = new Point(726, 15);
+            button2.Location = new Point(781, 15);
             button2.Name = "button2";
             button2.Size = new Size(58, 23);
             button2.TabIndex = 6;
@@ -147,12 +145,13 @@
             button3.FlatAppearance.BorderSize = 0;
             button3.FlatStyle = FlatStyle.Flat;
             button3.ForeColor = Color.FromArgb(224, 224, 224);
-            button3.Location = new Point(664, 43);
+            button3.Location = new Point(719, 43);
             button3.Name = "button3";
             button3.Size = new Size(56, 23);
             button3.TabIndex = 7;
             button3.Text = "Search";
             button3.UseVisualStyleBackColor = false;
+            button3.Click += SearchTag_Clicked;
             // 
             // button4
             // 
@@ -162,12 +161,13 @@
             button4.FlatAppearance.BorderSize = 0;
             button4.FlatStyle = FlatStyle.Flat;
             button4.ForeColor = Color.FromArgb(224, 224, 224);
-            button4.Location = new Point(726, 43);
+            button4.Location = new Point(781, 43);
             button4.Name = "button4";
             button4.Size = new Size(58, 23);
             button4.TabIndex = 9;
             button4.Text = "Help";
             button4.UseVisualStyleBackColor = false;
+            button4.Click += Help_Clicked;
             // 
             // showFolderRadioBtn
             // 
@@ -197,7 +197,7 @@
             // 
             label3.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             label3.ForeColor = Color.FromArgb(224, 224, 224);
-            label3.Location = new Point(580, 105);
+            label3.Location = new Point(635, 105);
             label3.Name = "label3";
             label3.Size = new Size(203, 15);
             label3.TabIndex = 13;
@@ -210,9 +210,9 @@
             tagTree.BackColor = Color.FromArgb(64, 64, 64);
             tagTree.CheckBoxes = true;
             tagTree.ForeColor = Color.FromArgb(224, 224, 224);
-            tagTree.Location = new Point(590, 123);
+            tagTree.Location = new Point(645, 123);
             tagTree.Name = "tagTree";
-            tagTree.Size = new Size(204, 384);
+            tagTree.Size = new Size(204, 428);
             tagTree.TabIndex = 15;
             // 
             // button5
@@ -223,7 +223,7 @@
             button5.FlatAppearance.BorderSize = 0;
             button5.FlatStyle = FlatStyle.Flat;
             button5.ForeColor = Color.FromArgb(224, 224, 224);
-            button5.Location = new Point(590, 513);
+            button5.Location = new Point(645, 557);
             button5.Name = "button5";
             button5.Size = new Size(187, 23);
             button5.TabIndex = 16;
@@ -239,7 +239,7 @@
             button6.FlatAppearance.BorderSize = 0;
             button6.FlatStyle = FlatStyle.Flat;
             button6.ForeColor = Color.FromArgb(224, 224, 224);
-            button6.Location = new Point(589, 587);
+            button6.Location = new Point(644, 631);
             button6.Name = "button6";
             button6.Size = new Size(90, 23);
             button6.TabIndex = 17;
@@ -255,7 +255,7 @@
             button7.FlatAppearance.BorderSize = 0;
             button7.FlatStyle = FlatStyle.Flat;
             button7.ForeColor = Color.FromArgb(224, 224, 224);
-            button7.Location = new Point(685, 587);
+            button7.Location = new Point(740, 631);
             button7.Name = "button7";
             button7.Size = new Size(92, 23);
             button7.TabIndex = 18;
@@ -269,47 +269,10 @@
             tagTextBox.BackColor = Color.FromArgb(64, 64, 64);
             tagTextBox.BorderStyle = BorderStyle.FixedSingle;
             tagTextBox.ForeColor = Color.White;
-            tagTextBox.Location = new Point(590, 558);
+            tagTextBox.Location = new Point(645, 602);
             tagTextBox.Name = "tagTextBox";
             tagTextBox.Size = new Size(187, 23);
             tagTextBox.TabIndex = 19;
-            // 
-            // radioButton3
-            // 
-            radioButton3.Anchor = AnchorStyles.Bottom;
-            radioButton3.AutoSize = true;
-            radioButton3.Checked = true;
-            radioButton3.ForeColor = Color.FromArgb(224, 224, 224);
-            radioButton3.Location = new Point(12, 585);
-            radioButton3.Name = "radioButton3";
-            radioButton3.Size = new Size(109, 19);
-            radioButton3.TabIndex = 21;
-            radioButton3.TabStop = true;
-            radioButton3.Text = "Clear tag search";
-            radioButton3.UseVisualStyleBackColor = true;
-            // 
-            // radioButton4
-            // 
-            radioButton4.Anchor = AnchorStyles.Bottom;
-            radioButton4.AutoSize = true;
-            radioButton4.ForeColor = Color.FromArgb(224, 224, 224);
-            radioButton4.Location = new Point(127, 585);
-            radioButton4.Name = "radioButton4";
-            radioButton4.Size = new Size(162, 19);
-            radioButton4.TabIndex = 22;
-            radioButton4.Text = "Show tagged files inside it";
-            radioButton4.UseVisualStyleBackColor = true;
-            // 
-            // label4
-            // 
-            label4.Anchor = AnchorStyles.Bottom;
-            label4.AutoSize = true;
-            label4.ForeColor = Color.FromArgb(224, 224, 224);
-            label4.Location = new Point(12, 565);
-            label4.Name = "label4";
-            label4.Size = new Size(265, 15);
-            label4.TabIndex = 23;
-            label4.Text = "How to handle browsing folders from tag search:";
             // 
             // label5
             // 
@@ -321,45 +284,22 @@
             label5.TabIndex = 24;
             label5.Text = "How to handle opening folders :";
             // 
-            // radioButton5
-            // 
-            radioButton5.Anchor = AnchorStyles.Bottom;
-            radioButton5.AutoSize = true;
-            radioButton5.ForeColor = Color.FromArgb(224, 224, 224);
-            radioButton5.Location = new Point(295, 585);
-            radioButton5.Name = "radioButton5";
-            radioButton5.Size = new Size(194, 19);
-            radioButton5.TabIndex = 25;
-            radioButton5.Text = "Show tagged files under its path";
-            radioButton5.UseVisualStyleBackColor = true;
-            // 
             // label6
             // 
-            label6.Anchor = AnchorStyles.Bottom;
+            label6.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             label6.ForeColor = Color.FromArgb(224, 224, 224);
-            label6.Location = new Point(12, 512);
+            label6.Location = new Point(138, 604);
             label6.Name = "label6";
-            label6.Size = new Size(563, 15);
+            label6.Size = new Size(491, 15);
             label6.TabIndex = 29;
             label6.Text = "Addition and removal does not affect the actual files (Press help in top right for more info)";
             label6.TextAlign = ContentAlignment.TopCenter;
-            // 
-            // label7
-            // 
-            label7.Anchor = AnchorStyles.Bottom;
-            label7.AutoSize = true;
-            label7.ForeColor = Color.FromArgb(224, 224, 224);
-            label7.Location = new Point(283, 565);
-            label7.Name = "label7";
-            label7.Size = new Size(267, 15);
-            label7.TabIndex = 31;
-            label7.Text = "(Red files are missing files that have been moved)";
             // 
             // label8
             // 
             label8.Anchor = AnchorStyles.Top;
             label8.ForeColor = Color.FromArgb(224, 224, 224);
-            label8.Location = new Point(221, 102);
+            label8.Location = new Point(249, 102);
             label8.Name = "label8";
             label8.Size = new Size(88, 15);
             label8.TabIndex = 32;
@@ -373,7 +313,7 @@
             button13.FlatAppearance.BorderSize = 0;
             button13.FlatStyle = FlatStyle.Flat;
             button13.ForeColor = Color.FromArgb(224, 224, 224);
-            button13.Location = new Point(315, 98);
+            button13.Location = new Point(343, 98);
             button13.Name = "button13";
             button13.Size = new Size(22, 22);
             button13.TabIndex = 33;
@@ -387,34 +327,35 @@
             button14.FlatAppearance.BorderSize = 0;
             button14.FlatStyle = FlatStyle.Flat;
             button14.ForeColor = Color.FromArgb(224, 224, 224);
-            button14.Location = new Point(190, 98);
+            button14.Location = new Point(218, 98);
             button14.Name = "button14";
             button14.Size = new Size(22, 22);
             button14.TabIndex = 34;
             button14.Text = "<";
             button14.UseVisualStyleBackColor = false;
             // 
-            // button15
+            // fixMissingFileBtn
             // 
-            button15.Anchor = AnchorStyles.Bottom;
-            button15.BackColor = Color.FromArgb(64, 64, 64);
-            button15.Enabled = false;
-            button15.FlatAppearance.BorderColor = Color.Gray;
-            button15.FlatAppearance.BorderSize = 0;
-            button15.FlatStyle = FlatStyle.Flat;
-            button15.ForeColor = Color.FromArgb(224, 224, 224);
-            button15.Location = new Point(466, 531);
-            button15.Name = "button15";
-            button15.Size = new Size(108, 23);
-            button15.TabIndex = 35;
-            button15.Text = "Fix missing file";
-            button15.UseVisualStyleBackColor = false;
+            fixMissingFileBtn.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+            fixMissingFileBtn.BackColor = Color.FromArgb(64, 64, 64);
+            fixMissingFileBtn.Enabled = false;
+            fixMissingFileBtn.FlatAppearance.BorderColor = Color.Gray;
+            fixMissingFileBtn.FlatAppearance.BorderSize = 0;
+            fixMissingFileBtn.FlatStyle = FlatStyle.Flat;
+            fixMissingFileBtn.ForeColor = Color.FromArgb(224, 224, 224);
+            fixMissingFileBtn.Location = new Point(466, 625);
+            fixMissingFileBtn.Name = "fixMissingFileBtn";
+            fixMissingFileBtn.Size = new Size(108, 23);
+            fixMissingFileBtn.TabIndex = 35;
+            fixMissingFileBtn.Text = "Fix missing file";
+            fixMissingFileBtn.UseVisualStyleBackColor = false;
+            fixMissingFileBtn.Click += FixMissingFile_Clicked;
             // 
             // label9
             // 
             label9.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             label9.ForeColor = Color.FromArgb(224, 224, 224);
-            label9.Location = new Point(613, 539);
+            label9.Location = new Point(668, 583);
             label9.Name = "label9";
             label9.Size = new Size(140, 15);
             label9.TabIndex = 37;
@@ -423,19 +364,21 @@
             // 
             // tagFilterTextBox
             // 
+            tagFilterTextBox.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             tagFilterTextBox.BackColor = Color.FromArgb(64, 64, 64);
             tagFilterTextBox.BorderStyle = BorderStyle.FixedSingle;
             tagFilterTextBox.ForeColor = Color.White;
-            tagFilterTextBox.Location = new Point(604, 80);
+            tagFilterTextBox.Location = new Point(660, 78);
             tagFilterTextBox.Name = "tagFilterTextBox";
             tagFilterTextBox.Size = new Size(124, 23);
             tagFilterTextBox.TabIndex = 38;
             // 
             // label10
             // 
+            label10.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             label10.AutoSize = true;
             label10.ForeColor = Color.FromArgb(224, 224, 224);
-            label10.Location = new Point(533, 83);
+            label10.Location = new Point(588, 81);
             label10.Name = "label10";
             label10.Size = new Size(65, 15);
             label10.TabIndex = 39;
@@ -443,11 +386,12 @@
             // 
             // tagFilterClearBtn
             // 
+            tagFilterClearBtn.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             tagFilterClearBtn.BackColor = Color.FromArgb(64, 64, 64);
             tagFilterClearBtn.FlatAppearance.BorderSize = 0;
             tagFilterClearBtn.FlatStyle = FlatStyle.Flat;
             tagFilterClearBtn.ForeColor = Color.FromArgb(224, 224, 224);
-            tagFilterClearBtn.Location = new Point(734, 79);
+            tagFilterClearBtn.Location = new Point(791, 77);
             tagFilterClearBtn.Name = "tagFilterClearBtn";
             tagFilterClearBtn.Size = new Size(49, 23);
             tagFilterClearBtn.TabIndex = 40;
@@ -464,7 +408,7 @@
             fileListView.LargeImageList = fileIconsImageList;
             fileListView.Location = new Point(12, 123);
             fileListView.Name = "fileListView";
-            fileListView.Size = new Size(562, 383);
+            fileListView.Size = new Size(617, 454);
             fileListView.TabIndex = 41;
             fileListView.UseCompatibleStateImageBehavior = false;
             // 
@@ -501,13 +445,14 @@
             // 
             // previousFileBtn
             // 
+            previousFileBtn.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             previousFileBtn.BackColor = Color.FromArgb(20, 60, 110);
             previousFileBtn.BackgroundImage = SystemFilesTagger.res.ArrowLeft;
             previousFileBtn.BackgroundImageLayout = ImageLayout.Stretch;
             previousFileBtn.Enabled = false;
             previousFileBtn.FlatAppearance.BorderSize = 0;
             previousFileBtn.FlatStyle = FlatStyle.Flat;
-            previousFileBtn.Location = new Point(596, 17);
+            previousFileBtn.Location = new Point(651, 17);
             previousFileBtn.Name = "previousFileBtn";
             previousFileBtn.Size = new Size(28, 20);
             previousFileBtn.TabIndex = 44;
@@ -516,13 +461,14 @@
             // 
             // nextFileBtn
             // 
+            nextFileBtn.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             nextFileBtn.BackColor = Color.FromArgb(20, 60, 110);
             nextFileBtn.BackgroundImage = SystemFilesTagger.res.ArrowRight;
             nextFileBtn.BackgroundImageLayout = ImageLayout.Stretch;
             nextFileBtn.Enabled = false;
             nextFileBtn.FlatAppearance.BorderSize = 0;
             nextFileBtn.FlatStyle = FlatStyle.Flat;
-            nextFileBtn.Location = new Point(630, 17);
+            nextFileBtn.Location = new Point(685, 17);
             nextFileBtn.Name = "nextFileBtn";
             nextFileBtn.Size = new Size(28, 20);
             nextFileBtn.TabIndex = 45;
@@ -534,7 +480,7 @@
             tagRecursivelyCheck.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             tagRecursivelyCheck.AutoSize = true;
             tagRecursivelyCheck.ForeColor = Color.FromArgb(224, 224, 224);
-            tagRecursivelyCheck.Location = new Point(13, 534);
+            tagRecursivelyCheck.Location = new Point(14, 628);
             tagRecursivelyCheck.Name = "tagRecursivelyCheck";
             tagRecursivelyCheck.Size = new Size(296, 19);
             tagRecursivelyCheck.TabIndex = 46;
@@ -543,12 +489,13 @@
             // 
             // cleanDBBtn
             // 
+            cleanDBBtn.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             cleanDBBtn.BackColor = Color.FromArgb(64, 64, 64);
             cleanDBBtn.FlatAppearance.BorderColor = Color.Gray;
             cleanDBBtn.FlatAppearance.BorderSize = 0;
             cleanDBBtn.FlatStyle = FlatStyle.Flat;
             cleanDBBtn.ForeColor = Color.FromArgb(224, 224, 224);
-            cleanDBBtn.Location = new Point(13, 610);
+            cleanDBBtn.Location = new Point(13, 653);
             cleanDBBtn.Name = "cleanDBBtn";
             cleanDBBtn.Size = new Size(253, 23);
             cleanDBBtn.TabIndex = 47;
@@ -557,35 +504,73 @@
             // 
             // button8
             // 
+            button8.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             button8.BackColor = Color.FromArgb(64, 64, 64);
             button8.FlatAppearance.BorderColor = Color.Gray;
             button8.FlatAppearance.BorderSize = 0;
             button8.FlatStyle = FlatStyle.Flat;
             button8.ForeColor = Color.FromArgb(224, 224, 224);
-            button8.Location = new Point(354, 531);
+            button8.Location = new Point(354, 625);
             button8.Name = "button8";
             button8.Size = new Size(106, 23);
             button8.TabIndex = 48;
             button8.Text = "Remove selected files";
             button8.UseVisualStyleBackColor = false;
+            button8.Click += RemoveFiles_Clicked;
             // 
             // ignoreCaseCheck
             // 
+            ignoreCaseCheck.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             ignoreCaseCheck.AutoSize = true;
             ignoreCaseCheck.ForeColor = Color.FromArgb(224, 224, 224);
-            ignoreCaseCheck.Location = new Point(572, 46);
+            ignoreCaseCheck.Location = new Point(621, 45);
             ignoreCaseCheck.Name = "ignoreCaseCheck";
             ignoreCaseCheck.Size = new Size(86, 19);
             ignoreCaseCheck.TabIndex = 49;
             ignoreCaseCheck.Text = "Ignore case";
             ignoreCaseCheck.UseVisualStyleBackColor = true;
             // 
+            // selectedFileLabel
+            // 
+            selectedFileLabel.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+            selectedFileLabel.BorderStyle = BorderStyle.FixedSingle;
+            selectedFileLabel.FlatStyle = FlatStyle.Flat;
+            selectedFileLabel.Location = new Point(12, 580);
+            selectedFileLabel.Name = "selectedFileLabel";
+            selectedFileLabel.Size = new Size(617, 18);
+            selectedFileLabel.TabIndex = 50;
+            // 
+            // button9
+            // 
+            button9.BackColor = Color.FromArgb(64, 64, 64);
+            button9.FlatAppearance.BorderSize = 0;
+            button9.FlatStyle = FlatStyle.Flat;
+            button9.ForeColor = Color.FromArgb(224, 224, 224);
+            button9.Location = new Point(12, 601);
+            button9.Name = "button9";
+            button9.Size = new Size(120, 23);
+            button9.TabIndex = 51;
+            button9.Text = "Copy to clipboard";
+            button9.UseVisualStyleBackColor = false;
+            // 
+            // label4
+            // 
+            label4.AutoSize = true;
+            label4.Location = new Point(383, 102);
+            label4.Name = "label4";
+            label4.Size = new Size(214, 15);
+            label4.TabIndex = 52;
+            label4.Text = "Paging not functional (for now at least)";
+            // 
             // FileAndTagsManager
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.FromArgb(32, 32, 32);
-            ClientSize = new Size(797, 644);
+            ClientSize = new Size(852, 688);
+            Controls.Add(label4);
+            Controls.Add(button9);
+            Controls.Add(selectedFileLabel);
             Controls.Add(ignoreCaseCheck);
             Controls.Add(button8);
             Controls.Add(cleanDBBtn);
@@ -599,17 +584,12 @@
             Controls.Add(label10);
             Controls.Add(tagFilterTextBox);
             Controls.Add(label9);
-            Controls.Add(button15);
+            Controls.Add(fixMissingFileBtn);
             Controls.Add(button14);
             Controls.Add(button13);
             Controls.Add(label8);
-            Controls.Add(label7);
             Controls.Add(label6);
-            Controls.Add(radioButton5);
             Controls.Add(label5);
-            Controls.Add(label4);
-            Controls.Add(radioButton4);
-            Controls.Add(radioButton3);
             Controls.Add(tagTextBox);
             Controls.Add(button7);
             Controls.Add(button6);
@@ -652,17 +632,12 @@
         private Button button6;
         private Button button7;
         private TextBox tagTextBox;
-        private RadioButton radioButton3;
-        private RadioButton radioButton4;
-        private Label label4;
         private Label label5;
-        private RadioButton radioButton5;
         private Label label6;
-        private Label label7;
         private Label label8;
         private Button button13;
         private Button button14;
-        private Button button15;
+        private Button fixMissingFileBtn;
         private Label label9;
         private TextBox tagFilterTextBox;
         private Label label10;
@@ -677,5 +652,8 @@
         private Button cleanDBBtn;
         private Button button8;
         private CheckBox ignoreCaseCheck;
+        private Label selectedFileLabel;
+        private Button button9;
+        private Label label4;
     }
 }

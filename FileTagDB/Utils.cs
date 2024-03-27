@@ -37,15 +37,15 @@ namespace FileTagDB {
 
         }
         public static string ShortenFileName(string file) {
-            if (file.Length <= 18)
+            if (file.Length <= 28)
                 return file;
-            string fileStart = file.Substring(0, 8)+"..";
-            file = file.Substring(8);
+            string fileStart = file.Substring(0, 13)+"..";
+            file = file.Substring(13);
             string fileEnd = "";
             if (file.Contains(Path.PathSeparator)) {
                 fileEnd = file.Substring(file.LastIndexOf(Path.PathSeparator));
             } else {
-                fileEnd = file.Substring(file.Length - 10, 10); // should have enough characters
+                fileEnd = file.Substring(file.Length - 15, 15); // should have enough characters
             }
             return fileStart + fileEnd;
         }
