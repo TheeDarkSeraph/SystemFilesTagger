@@ -17,11 +17,14 @@ Winforms build link [here](https://drive.google.com/file/d/1Pb2wncjAGtJSwL17-cvE
 ### About
 
 Used .net6 for more compatibility (and .net8.0.3 currently has a bug error msg when using builds with treeviews, on selection update)
+
 GUI is made with winforms currently
+
 DB is tested with xunit, and is separated into its own project.
+
 SQLite ADO.NET was used for the DB system for portability and simplicity.
 
 ### Future
 
-* Support to entity frame work + tests
+* Support to entity frame work (and their corresponding xunit tests)
 * A WPF variant for better cross platform support
