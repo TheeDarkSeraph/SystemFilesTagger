@@ -1,13 +1,4 @@
-﻿using FileTagDB.Models;
-using System;
-using System.Collections.Generic;
-using System.Data.Common;
-using System.Data.SQLite;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Transactions;
+﻿using System.Data.SQLite;
 
 namespace FileTagDB.Controllers {
     public partial class TagController {

@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data.SQLite;
+﻿using System.Data.SQLite;
 using System.Diagnostics;
-using System.Xml.Linq;
 
 namespace FileTagDB.Controllers {
     public partial class DBController {

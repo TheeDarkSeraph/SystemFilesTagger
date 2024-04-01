@@ -1,10 +1,5 @@
-﻿using FileTagDB.Models;
-using System;
-using System.Collections.Generic;
-using System.Data.SQLite;
-using System.Linq;
+﻿using System.Data.SQLite;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace FileTagDB.Controllers {
     public partial class FileController {
@@ -26,7 +21,7 @@ namespace FileTagDB.Controllers {
                 return;
             }
             for (int i = 0; i < node.children.Count; i += bulkSeparation) {
-                MultiNodeInsert(node.children, i, Math.Min(bulkSeparation, node.children.Count - i), fileID);
+                MultiNodeInsert(node.children, i, System.Math.Min(bulkSeparation, node.children.Count - i), fileID);
                 //Utils.LogToOutput($" start i/total = {i} / {node.children.Count} Move {Math.Min(bulkSeparation, node.children.Count - i)} // par: {node.Path}");
             }
             // but now we need to insert my and child ID for all?

@@ -2,7 +2,10 @@ using FileTagDB.Controllers;
 using FileTagDB.Models;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using SystemFilesTagger;
+using SystemFilesTagger.Properties;
+
 namespace FileTagDB {
     public partial class FileAndTagsManager : Form {
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
@@ -122,7 +125,8 @@ namespace FileTagDB {
             tagTree.AfterCheck += NodeChecked_AfterCheck;
 
             SetupPathBoxShortcuts();
-            Bitmap theBitmap = new Bitmap(Image.FromFile("icons/Close.png"), new Size(32, 32));
+            
+            Bitmap theBitmap = new Bitmap(Resources.Close, new Size(32, 32));
             IntPtr Hicon = theBitmap.GetHicon();// Get an Hicon for myBitmap.
             defaultFileIcon = Icon.FromHandle(Hicon);// Create a new icon from the handle.
             try {
@@ -145,6 +149,8 @@ namespace FileTagDB {
         }
         // TODO: redo this filter node to work with checked values and unchecked values + coloring
         private void FilterNodes(string filterWord) {
+
+            Point scrollOffset = GetTreeViewScrollPos(tagTree);
             fileExtNode.Nodes.Clear();
             customTagsNode.Nodes.Clear();
             tagsNode.Clear();
@@ -154,8 +160,10 @@ namespace FileTagDB {
                 AddNode(tag.name);
             }
             tagTree.Sort();
+            SetTreeViewScrollPos(tagTree, scrollOffset);
         }
         private void AddNode(string tagName) {
+
             if (tagsNode.ContainsKey(tagName))
                 return;
             TreeNode node;
@@ -166,6 +174,7 @@ namespace FileTagDB {
             }
             tagsNode.Add(tagName, node);
             UpdateNodeCheckedStatus(node, tagName);
+
         }
         bool nodeCheckIsUserApplied = true;
         private void UpdateNodeCheckedStatus(TreeNode node, string tagName) {
@@ -183,8 +192,8 @@ namespace FileTagDB {
         }
 
         private void OnFilterBoxTextChanged(object? Sender, EventArgs e) {
-            if (Utils.AnyWhiteSpace().IsMatch(tagFilterTextBox.Text)) {
-                tagFilterTextBox.Text = Utils.AnyWhiteSpace().Replace(tagFilterTextBox.Text, ""); // will recall text changed
+            if (Regex.IsMatch(tagFilterTextBox.Text, @"\s+")) {
+                tagFilterTextBox.Text = Regex.Replace(tagFilterTextBox.Text, @"\s+", ""); // will recall text changed
             } else {
                 FilterNodes(tagFilterTextBox.Text);
             }
@@ -197,10 +206,12 @@ namespace FileTagDB {
         private void NodeChecked_AfterCheck(object? sender, TreeViewEventArgs e) {
             if (!nodeCheckIsUserApplied)
                 return;
-            Debug.WriteLine("Called 1");
-            if (e.Node == null)
+
+
+            TreeNode? currentNode = e.Node;
+            if (currentNode == null)
                 return;
-            TreeNode currentNode = e.Node;
+
             if (e.Node.Text == Consts.fileExtensions || e.Node.Text == Consts.customTags) {
                 MessageBox.Show("Checking/Unchecking parent categories does not do anything, " +
                     "they are here because they look bad in the child nodes in winforms if removed with the work around",
@@ -308,7 +319,7 @@ namespace FileTagDB {
             //        "Invalid operation", MessageBoxButtons.OK);
             //    return;
             //}
-            if (Utils.AnyWhiteSpace().IsMatch(tagToAdd) || tagToAdd.Contains("+")) {
+            if (Regex.IsMatch(tagToAdd, @"\s+") || tagToAdd.Contains("+")) {
                 MessageBox.Show("Tags can't have spaces or '+', as they are used for tag search",
                     "Invalid operation", MessageBoxButtons.OK);
                 return;
@@ -343,7 +354,7 @@ namespace FileTagDB {
                 return;
 
 
-            if (Utils.AnyWhiteSpace().IsMatch(tagToRemove) || tagToRemove.Contains("+")) {
+            if (Regex.IsMatch(tagToRemove, @"\s+") || tagToRemove.Contains("+")) {
                 MessageBox.Show("Tags can't have spaces or '+', as they are used for tag search",
                     "Invalid operation", MessageBoxButtons.OK);
                 return;
@@ -440,6 +451,8 @@ namespace FileTagDB {
             }
         }
         private void AdjustSelectedFilesTags() {
+
+            Point scrollOffset = GetTreeViewScrollPos(tagTree);
             activeTags.Clear();
             activeTagsContainedInAllSelected.Clear();
             if (fileListView.SelectedIndices.Count < 1) {
@@ -466,6 +479,7 @@ namespace FileTagDB {
             foreach (int tagId in tagsInAll)
                 activeTagsContainedInAllSelected.Add(tagsIdToName[tagId]);
             FilterNodes(tagFilterTextBox.Text);
+            SetTreeViewScrollPos(tagTree, scrollOffset);
         }
         #endregion
 
@@ -699,11 +713,11 @@ namespace FileTagDB {
             AdjustSelectedFilesTags();
         }
         private bool CheckTagQueryValidity() {
-            tagSearchBox.Text = Utils.AnyWhiteSpace().Replace(tagSearchBox.Text, " ").Trim();
+            tagSearchBox.Text = Regex.Replace(tagSearchBox.Text, @"\s+"," ").Trim();
             string query = tagSearchBox.Text;
             if (query == string.Empty)
                 return false;
-            string[] parts = Utils.AnyWhiteSpace().Split(query);
+            string[] parts = Regex.Split(query, @"\s+");
             bool validTags = true;
             string errorMsg = "";
             foreach (string tag in parts) {
@@ -979,6 +993,27 @@ namespace FileTagDB {
         }
         #endregion
 
+
+        #region Scrollview of treeview
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+        public static extern int GetScrollPos(IntPtr hWnd, int nBar);
+
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+        public static extern int SetScrollPos(IntPtr hWnd, int nBar, int nPos, bool bRedraw);
+
+        private const int SB_HORZ = 0x0;
+        private const int SB_VERT = 0x1;
+
+        private Point GetTreeViewScrollPos(TreeView treeView) {
+            return new Point(GetScrollPos(treeView.Handle, SB_HORZ),
+                GetScrollPos(treeView.Handle, SB_VERT));
+        }
+
+        private void SetTreeViewScrollPos(TreeView treeView, Point scrollPosition) {
+            SetScrollPos(treeView.Handle, SB_HORZ, scrollPosition.X, true);
+            SetScrollPos(treeView.Handle, SB_VERT, scrollPosition.Y, true);
+        }
+        #endregion
     }
     //void treeview1_DrawNode(object? sender, DrawTreeNodeEventArgs e) {
     //    if (e.Node == null)

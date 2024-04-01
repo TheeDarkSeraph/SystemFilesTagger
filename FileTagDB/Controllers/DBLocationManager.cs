@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace FileTagDB.Controllers {
+﻿namespace FileTagDB.Controllers {
     public class DBLocationManager {
         private const string defaultDBLocation = "./";
         private const string defaultDBName = "fts.db"; // FileTagSystem

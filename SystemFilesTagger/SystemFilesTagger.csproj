@@ -2,19 +2,20 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows7.0</TargetFramework>
+    <TargetFramework>net6.0-windows10.0.22621.0</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
-    <ImplicitUsings>enable</ImplicitUsings>
+	  
+	  <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+
+	  <ImplicitUsings>enable</ImplicitUsings>
     <SupportedOSPlatformVersion>7.0</SupportedOSPlatformVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.118" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\FileTagDB\FileTagDB.csproj" />
+    <Compile Remove="Resources\**" />
+    <EmbeddedResource Remove="Resources\**" />
+    <None Remove="Resources\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -23,34 +24,17 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <Compile Update="res.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>res.resx</DependentUpon>
-    </Compile>
   </ItemGroup>
+	
+	<ItemGroup>
+	  <ProjectReference Include="..\FileTagDB\FileTagDB.csproj" />
+	</ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Update="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <EmbeddedResource Update="res.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>res.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="icons\ArrowLeft.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="icons\ArrowUp.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="icons\Close.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 
 </Project>

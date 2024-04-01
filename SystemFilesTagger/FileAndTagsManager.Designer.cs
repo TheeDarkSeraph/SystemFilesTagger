@@ -1,4 +1,7 @@
-﻿namespace FileTagDB {
+﻿
+using SystemFilesTagger.Properties;
+
+namespace FileTagDB {
     partial class FileAndTagsManager {
         /// <summary>
         ///  Required designer variable.
@@ -403,7 +406,7 @@
             // 
             fileListView.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             fileListView.BackColor = Color.FromArgb(64, 64, 64);
-            fileListView.Font = new Font("Segoe UI", 9F);
+            fileListView.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
             fileListView.ForeColor = Color.FromArgb(224, 224, 224);
             fileListView.LargeImageList = fileIconsImageList;
             fileListView.Location = new Point(12, 123);
@@ -430,7 +433,7 @@
             // goToParentButton
             // 
             goToParentButton.BackColor = Color.DimGray;
-            goToParentButton.BackgroundImage = SystemFilesTagger.res.ArrowUp;
+            goToParentButton.BackgroundImage = Resources.ArrowUp;
             goToParentButton.BackgroundImageLayout = ImageLayout.Stretch;
             goToParentButton.Enabled = false;
             goToParentButton.FlatAppearance.BorderSize = 0;
@@ -447,7 +450,7 @@
             // 
             previousFileBtn.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             previousFileBtn.BackColor = Color.FromArgb(20, 60, 110);
-            previousFileBtn.BackgroundImage = SystemFilesTagger.res.ArrowLeft;
+            previousFileBtn.BackgroundImage = Resources.ArrowLeft;
             previousFileBtn.BackgroundImageLayout = ImageLayout.Stretch;
             previousFileBtn.Enabled = false;
             previousFileBtn.FlatAppearance.BorderSize = 0;
@@ -463,7 +466,7 @@
             // 
             nextFileBtn.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             nextFileBtn.BackColor = Color.FromArgb(20, 60, 110);
-            nextFileBtn.BackgroundImage = SystemFilesTagger.res.ArrowRight;
+            nextFileBtn.BackgroundImage = Resources.ArrowRight;
             nextFileBtn.BackgroundImageLayout = ImageLayout.Stretch;
             nextFileBtn.Enabled = false;
             nextFileBtn.FlatAppearance.BorderSize = 0;
@@ -532,7 +535,7 @@
             // 
             // selectedFileLabel
             // 
-            selectedFileLabel.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+            selectedFileLabel.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             selectedFileLabel.BorderStyle = BorderStyle.FixedSingle;
             selectedFileLabel.FlatStyle = FlatStyle.Flat;
             selectedFileLabel.Location = new Point(12, 580);
@@ -542,6 +545,7 @@
             // 
             // button9
             // 
+            button9.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             button9.BackColor = Color.FromArgb(64, 64, 64);
             button9.FlatAppearance.BorderSize = 0;
             button9.FlatStyle = FlatStyle.Flat;
@@ -552,9 +556,11 @@
             button9.TabIndex = 51;
             button9.Text = "Copy to clipboard";
             button9.UseVisualStyleBackColor = false;
+            button9.Click += CopyToClipboard;
             // 
             // label4
             // 
+            label4.Anchor = AnchorStyles.Top;
             label4.AutoSize = true;
             label4.Location = new Point(383, 102);
             label4.Name = "label4";

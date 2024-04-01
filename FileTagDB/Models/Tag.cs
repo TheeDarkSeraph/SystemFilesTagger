@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace FileTagDB.Models {
+﻿namespace FileTagDB.Models {
     public class Tag{
         public int id;
         public string name;

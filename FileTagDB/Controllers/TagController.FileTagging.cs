@@ -1,13 +1,6 @@
-﻿using FileTagDB.Models;
-using System;
-using System.Collections.Generic;
-using System.Data.SQLite;
-using System.Diagnostics;
-using System.Linq;
+﻿using System.Data.SQLite;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using System.Xml.Linq;
 
 namespace FileTagDB.Controllers {
     public partial class TagController {
@@ -122,7 +115,7 @@ namespace FileTagDB.Controllers {
         // TODO: NOTE: You CANNOT have -a+b , user can't use - ( ) + * ~ for tag names
         const string endingAnd = " AND";
         private string AdjustQuery(string tagQuery, string idPrefixed, string tableName, string idCol, string nameCol) {
-            if (tagQuery.Contains("-") && !Utils.AnyWhiteSpace().IsMatch(tagQuery)) // so only one negative query
+            if (tagQuery.Contains("-") && !Regex.IsMatch(tagQuery, @"\s+")) // so only one negative query
                 tagQuery = "* " + tagQuery;
             
             int addedStringLength = $@" {idPrefixed} IN (SELECT {idCol} FROM {tableName} WHERE {nameCol} LIKE SOMETHING ESCAPE '\'){endingAnd}".Length;
@@ -131,7 +124,7 @@ namespace FileTagDB.Controllers {
             tagQuery = tagQuery.Replace(@"\", @"\\").Replace("'","''").Replace("_", @"\_").Replace("%", @"\%")
                 .Replace('*','%').Replace('~','_');
 
-            string[] parts = Utils.AnyWhiteSpace().Split(tagQuery);
+            string[] parts = Regex.Split(tagQuery, @"\s+");
             // if all of them are negative, add 1 positive %
 
 
@@ -147,7 +140,7 @@ namespace FileTagDB.Controllers {
             if (allNegative)
                 AddQuery(sb, "%", idPrefixed, tableName, idCol, nameCol);
             sb.Length -= 4;
-            return Utils.AnyWhiteSpace().Replace(sb.ToString(), " ");
+            return Regex.Replace(sb.ToString(), @"\s+", " ");
         }
         private void AddQuery(StringBuilder sb, string part, string idPrefixed, string tableName, string idCol, string nameCol) {
             if (part.Contains('+')) {

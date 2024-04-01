@@ -1,7 +1,10 @@
 using FileTagDB.Controllers;
+using System.Reflection;
 
 namespace FileTagDB {
     internal static class Program {
+
+
         /// <summary>
         ///  The main entry point for the application.
         /// </summary>
@@ -10,6 +13,7 @@ namespace FileTagDB {
             // To customize application configuration such as set high DPI settings or default font,
             // see https://aka.ms/applicationconfiguration.
             ApplicationConfiguration.Initialize();
+
             // The folder for the roaming current user 
             //string folder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
             string folder = "./";
