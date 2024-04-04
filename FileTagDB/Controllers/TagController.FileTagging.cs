@@ -31,7 +31,6 @@ namespace FileTagDB.Controllers {
 
 
 
-        // TODO: This one
         public void RemoveFilesWithoutTags() {
             ConnectDB();
             ActivateForeignKey();
@@ -112,7 +111,7 @@ namespace FileTagDB.Controllers {
         //  and user given '%' and '_' and '/' are all escaped with '/" character first
         // So, escapify characters, then replace with suitable
         // Note we assume here the string is correctly formatted
-        // TODO: NOTE: You CANNOT have -a+b , user can't use - ( ) + * ~ for tag names
+        // NOTE: You CANNOT have -a+b , user can't use - ( ) + * ~ for tag names
         const string endingAnd = " AND";
         private string AdjustQuery(string tagQuery, string idPrefixed, string tableName, string idCol, string nameCol) {
             if (tagQuery.Contains("-") && !Regex.IsMatch(tagQuery, @"\s+")) // so only one negative query

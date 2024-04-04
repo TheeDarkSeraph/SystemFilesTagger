@@ -20,13 +20,6 @@ namespace TagDatabaseTester {
     public class FileTests {
         // NOTE: All tests are customized to files listed in filepaths.txt main developer (Salah Elabyad)
 
-
-        // TODO: add the ability to navigate to file's parent
-        // TODO: Note I have considered not adding references to child files and such, and leaving it to the system.
-        //          but I can't fully support the export/import fix links without it. User would have to redo the
-        //          files and folders and the inner files and folders.
-
-        // TODO: the + should translated to  (A OR B)
         List<string> sampleFiles;
         FileController fc;
         
@@ -275,7 +268,6 @@ namespace TagDatabaseTester {
         [InlineData(5, new int[] { 5, 6, 7, 8, 20, 30, 100, 1000, 4000, 6750 }, new int[] { 6790, 6800, 1, 2, 3, 4 })]
         public void ShouldGetAllFilesUnderCertainPath(int fileLine, int[] existing, int[] nonExisting) {
             // folder and all files in it or in its folder recursively (And the folders)
-            // TODO: add all files, get files in a certain path... (Getwith path
             fc.BulkAddFiles(sampleFiles); // this causes major delay because it tries to re-insert everything
             FixAllSampleFiles();
             Utils.LogToOutput($"File to search {sampleFiles[fileLine - 1]}");

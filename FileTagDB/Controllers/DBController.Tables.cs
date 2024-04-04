@@ -2,7 +2,6 @@
 
 namespace FileTagDB.Controllers {
     public partial class DBController {
-        // TODO: Ignore the ../ in paths
         // TCC - Table Creation Command
         const string fileTCC = @$"
             CREATE TABLE {TableConst.filesTName}(

@@ -19,9 +19,6 @@ namespace FileTagDB {
         /// </summary>
         TagController tc;
 
-        // TODO: now we need to program search mode + clear files without tags in DB
-        // TODO: #1 Finish the Clear files without tags in DB first  TESTS
-        //          Then do a road map of how we expect the tag search to be done
         // TODO: Consider adding paging later on...
 
         #region Variables
@@ -147,7 +144,6 @@ namespace FileTagDB {
             fileExtNode = tagTree.Nodes.Add(Consts.fileExtensions);
             customTagsNode = tagTree.Nodes.Add(Consts.customTags);
         }
-        // TODO: redo this filter node to work with checked values and unchecked values + coloring
         private void FilterNodes(string filterWord) {
 
             Point scrollOffset = GetTreeViewScrollPos(tagTree);
@@ -237,7 +233,6 @@ namespace FileTagDB {
         #region Taging and untagging Selected files
         private void TagSelectedFiles(int tagId) {
             // Now we can implement it... // get selected indicies
-            // TODO: Requires image view for more logic?? what does this mean
             if (fileListView.SelectedIndices.Count < 1)
                 return;
             List<string> filesToTag = GetSelectedFiles(tagRecursivelyCheck.Checked);
@@ -329,6 +324,11 @@ namespace FileTagDB {
                     "Invalid operation", MessageBoxButtons.OK);
                 return;
             }
+            if (tagToAdd.Contains("~") || tagToAdd.Contains("*")) {
+                MessageBox.Show("~ is a character wild card and * is a sequence wild card, they can't be used",
+                    "Cant add tag", MessageBoxButtons.OK);
+                return;
+            }
             if (tagsNameToId.ContainsKey(tagToAdd)) {
                 MessageBox.Show("Tag already exists",
                     "Cant add tag", MessageBoxButtons.OK);
@@ -395,22 +395,8 @@ namespace FileTagDB {
         private void CleanUpDB_Clicked(object sender, EventArgs e) {
             tc.RemoveFilesWithoutTags();
         }
-        // TODO: tags cant start with a DOT as it is reserved for extensions
 
 
-        //private void FilesSelectedChanged(object? sender, EventArgs e) {
-        //    Debug.WriteLine("Current Selected "+fileViewList.SelectedIndices.Count);
-        //}
-
-        // get selected indicies (should be mapped to current active files)
-        //  then based on them, affect the tags selection
-
-        // TODO: Missing, get file tags(ids), get files tags (all)
-        // get all selected files.
-        // Has tags in both = union, does not has tag = union, has partial = intersection???
-        // NOT existing = false (Set all to false first), color black
-        // union = true (checked) & color blue
-        // intersection = color black, the remaining blue are only partially selected
         #region Adjusting tags to match those on selected files (while considering double click)
         private async void FileListView_MouseDown(object? sender, EventArgs e) {
             await CancelOrFinishTagAdjustment();
@@ -583,12 +569,10 @@ namespace FileTagDB {
             ReadjustFileList();
         }
         private void ReadjustFileList() {
-            // TODO: if file info is null, or path does not exist then add full path with red
             fileListView.Clear();
             fileIconsImageList.Images.Clear();
             int filesAdded = 0;
             foreach (string filepath in currentActiveFiles) {
-                //Debug.WriteLine("HERE ! " + filepath);
                 Icon? fileIcon = GetFileIcon(filepath);
                 if (fileIcon == null)
                     fileIcon = defaultFileIcon;
@@ -662,17 +646,9 @@ namespace FileTagDB {
 
 
 
-        // TODO: Show the full path of selected file (first selected index only), or no file selected (put a label for it)
 
         #region Searching tagged files
-        // TODO: view search result of files, and mark searching tags as true
-        //          when user searches the search bar, mark searching tags as false
-        //      Depending on certain "radio button checks" we will call update the browsing
-        //          with files containing certain features
-        // Adjust browsing to call "Tagged browsing" functions
-        //      we could separate this part into another class
 
-        // TODO: Adjust the searching tags boolean in regular browsing class
         bool isSearchingTags = false;
         string lastTagSearched = "";
         private void SearchTagBox_EnterKeyDown(object? sender, KeyEventArgs e) {
@@ -693,12 +669,10 @@ namespace FileTagDB {
             ReadjustFileListTagMode();
         }
         private void ReadjustFileListTagMode() {
-            // TODO: if file info is null, or path does not exist then add full path with red
             fileListView.Clear();
             fileIconsImageList.Images.Clear();
             int filesAdded = 0;
             foreach (string filepath in currentActiveFiles) {
-                //Debug.WriteLine("HERE ! " + filepath);
                 Icon? fileIcon = GetFileIcon(filepath);
                 if (fileIcon == null)
                     fileIcon = defaultFileIcon;

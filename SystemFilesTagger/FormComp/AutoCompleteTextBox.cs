@@ -14,18 +14,6 @@ namespace SystemFilesTagger.FormComp {
 #pragma warning disable CS8602 // Nullability of reference types in type of parameter doesn't match the target delegate (possibly because of nullability attributes).
 
     public class AutoCompleteTextBox : TextBox {
-        // TODO: Rework this class as follows:
-        /* 
-         * 1- Stop all ding sounds by handling them if more appear
-         * 2- Enable clicking the dropdown items to choose them
-         * 3- The auto complete list seems to remove items already inserted,
-         *      this is a bonus I believe so we will leave it
-         * 4- We want a variant for the search box as a dropdown (for drives, then desktop, documents, music, image [assuming windows here])
-         * 
-         * 5- We will be in control of the list. Just make sure it works as intended
-         *      (by reading the code) and rework any code if needed
-         *      
-         */
         
         private ListBox _listBox;
         private bool _isAdded;

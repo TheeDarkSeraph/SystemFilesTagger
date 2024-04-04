@@ -10,10 +10,6 @@ namespace TagDatabaseTester {
     [Collection("Sequential")] // this stops the parallel problem with deleting DB file
     public class DatabaseTester {
 
-        // Dont forget to Add project reference
-
-        // Add control folder for control?
-        // TODO: Add test list
         #region Prints and Helper functions
         private readonly ITestOutputHelper output;
         private readonly DBLocationManager lm;
@@ -56,27 +52,5 @@ namespace TagDatabaseTester {
             // cleanup
             DeleteTestDB();
         }
-        // we should have a default (#Untagged) tag, shows in a selection thats there on its own (if there are any)
-        // User cannot define it as a tag because it is not actually a tag, it is a select all files without a tag associated to them
-
-
-        // some tests adding data to tag,
-        // some tests adding data to file
-        
-        // before next tests the above ensures bogus tests exist
-        
-        // some tests adding data to folders/files and auto associating children files and parent folders
-        // deassociation file from child when links are broken OR file is removed (make sure)
-        // some tests tagging files
-        // some tests adding folder and its children (existing to so auto)
-        // some tests adding folder and its children (non-existing forcefully)
-        // searching for a file's root missing folder missing link
-        // fixing a file's path
-
-        /// The rest is in the next file
-
     }
-    // TODO: if file does not exist, check if its parent exists in the file DB, if it does switch check to it
-    //          until there is no more a parent. then this specific folder/file Is the missing link (ask to fix link/delete reference)
-    //          
 }

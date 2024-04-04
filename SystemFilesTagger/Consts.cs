@@ -13,7 +13,6 @@ namespace SystemFilesTagger {
         public const string unknownFile = "Unknown";
         public static readonly string[] nonUsableTags = new string[]{regularFile, folderFile, unknownFile };
         
-        // TODO: change this to a dictionary for optimallity?
         /// <summary>
         /// Some of the common extensions that share an icon in windows
         /// </summary>

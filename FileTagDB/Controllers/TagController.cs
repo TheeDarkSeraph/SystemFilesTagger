@@ -2,12 +2,10 @@
 using FileTagDB.Models;
 
 namespace FileTagDB.Controllers {
-    // TODO: NOTE: Tags are assumed to never reach 1 mil tags, but will never exceed that so
+    // NOTE: Tags are assumed to never reach 1 mil tags, but will never exceed that so
     //      all tags will be loaded in memory along with their IDs
 
     public partial class TagController {
-        // TODO: Renamable box selection item...
-        // TODO: Select from list where tag = regexp (translated FROM user)
         FileController _fileController;
         SQLiteConnection conn;
         public TagController(FileController fc) {

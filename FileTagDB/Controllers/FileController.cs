@@ -2,26 +2,6 @@
 using System.Runtime.InteropServices;
 
 namespace FileTagDB.Controllers {
-    // TODO: Have custom default tags that are auto added (unmodifiable)
-    /* .extension tagging (depends) .3 -4 letters
-     * no ext
-     * Folders
-     * 
-     * renaming a 'file' and changing its extension will cause change of file extension
-     *  so untag previous tag, then add new tag (folder, no ext, new ext)...
-     * .ext tags can be manually removed. This has to be tested...
-     * This should all be programatically... and manually adjusted
-     * 
-     * So adding file and adding extension should be associated (auto create tags)
-     * 
-     * Maybe we can have the tagging and untaggin of the files separate to avoid confusion
-     * So we first insert the file, then we pass it to a function that would auto tag it
-     * renaming a 'file' will also cause auto tagging
-     * 
-     * 
-     */
-    // TODO: Show start of path, and end of path (file name) in a label below shown files/folders
-    // Add folder icon to folders and files to 
     public partial class FileController {
         internal SQLiteConnection conn;
         public static int bulkSeparation = 200;
@@ -46,8 +26,6 @@ namespace FileTagDB.Controllers {
         private void DisconnectDB() {
             conn.Dispose();
         }
-        // TODO: When adding a folder, process how many files to add first.
-        // TODO: Warn user when adding more than 10k files total that it will take some time
 
         #region Helper Static Functions
         public static string FixFilePath(string filepath) {

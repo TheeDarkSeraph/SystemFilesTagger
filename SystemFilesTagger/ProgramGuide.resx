@@ -157,7 +157,9 @@ You can tag and untag files, by checking and unchecking the boxes.
 
                             * Searching tags *
 This is the core feature of the program. When looking for something from what you've added through tags, you can use the tag search text box (2nd top one).
-You can use '*' to indicate a wild card (any set of characters), you can also start a tag with '-' to indicate to exclude it from the search.
+You can use '*' to indicate a wild card (any sequence), you can also start a tag with '-' to indicate to exclude it from the search.
+
+There is also the '~' wildcare which means any single character
 
 For example:  music -.ogg
 This will bring all files &amp; folders tagged with music, but not tagged with .ogg

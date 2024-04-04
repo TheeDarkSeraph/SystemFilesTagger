@@ -23,7 +23,6 @@ namespace FileTagDB.Controllers {
                 cmd.CommandText = tcc;
                 return cmd.ExecuteReader();
         }
-        // TODO: Don't open connection here, pass command
         public static bool TryExecuteSingleRead(SQLiteCommand cmd, string cmdText, string columnName, out object? result) {
             cmd.CommandText = cmdText;
             var reader = cmd.ExecuteReader();
@@ -32,9 +31,6 @@ namespace FileTagDB.Controllers {
                 reader.Close();
                 return false;
             }
-            //Utils.LogToOutput("Fields");
-            //for (int i = 0; i < reader.FieldCount; i++)
-            //    Utils.LogToOutput(reader.GetFieldType(i).ToString());
             result = reader[columnName];
             reader.Close();
             return true;

@@ -461,7 +461,6 @@ namespace TagDatabaseTester {
                 files.Add(sampleFiles[i]);
             return files;
         }
-        // TODO: customize this to do multiple queries and assert them.
         /* query format:
          * 1- search query
          * 2- file step (how much to move the start by when including tags to files)
@@ -657,14 +656,7 @@ namespace TagDatabaseTester {
         }
 
 
-        // TODO: Make this into a theory, list the files that will be tagged, and how many random tags
-        //          to add to the file
-        /* So, number of files to tag, number of tags for each one, number of files remaining
-         * 
-         * 
-         * 
-         * 
-         */
+        // So, number of files to tag, number of tags for each one, number of files remaining
         [Theory]
         [InlineData(0, new int[0])]
         [InlineData(1, new int[] { 4})]
@@ -694,19 +686,5 @@ namespace TagDatabaseTester {
                 fc.BulkAddFiles(sampleFiles); // since we will delete
             }
         }
-
-        // map expression to AND, OR, NOT AND
-        // like a AND b //// % and \% for actual remainders...
-        // TODO: We need to know what like even means... https://www.sqlitetutorial.net/sqlite-like/  https://www.tutorialspoint.com/sqlite/sqlite_and_or_clauses.htm
-
-        // TODO: Remember that what we need to use ID to search for tagged files (tag relation)
-        //      do we union and search?
-
-        // TODO: We will not use -d+e because it is simply -d -e
-        // query tag regex a* aa b+c -d -d+e is like -d -e?, what does -d+e even mean?
-        // so like a% AND has aa AND has (b or C) and NOT d AND NOT (d or e) = not d and not e so basically -d -e
-
-
-
     }
 }

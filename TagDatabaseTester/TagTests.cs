@@ -13,17 +13,7 @@ namespace TagDatabaseTester {
     [Collection("Sequential")] // this stops the parallel with other classes named the same
     // also it makes them run sequentially
     public class TagTests {
-        // TODO: Can add tags from a file
 
-        // add static populate data and delete data
-        // TODO: Test all languages for tags
-        // TODO: When user types in a space or an illegal character, show a tooltip for a few seconds
-        //          and delete that character OR REPLACE space with _ underscore
-        //      note that user can't start a tag with '-' or use '+' anywhere in the string
-        // TODO: for files with 3-4 character extensions, auto add that extension as a tag if it doesn't exist
-        // ( a b+c) (a -b+c) (a -b) (a+b c+d) (a* b)
-
-        // TODO: Be sure to escape the users '_' underscore and '%' also replace '*' with non escaped %
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
         static List<string> sampleTags;

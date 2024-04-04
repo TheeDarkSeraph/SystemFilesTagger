@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TagDatabaseTester", "TagDat
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FileTagDB", "FileTagDB\FileTagDB.csproj", "{CC932D76-B783-4938-9DDB-9F29799BDD37}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileTagEF", "FileTagEF\FileTagEF.csproj", "{C6674B63-3F8E-4E41-BC08-2B4E445460D8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{CC932D76-B783-4938-9DDB-9F29799BDD37}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CC932D76-B783-4938-9DDB-9F29799BDD37}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CC932D76-B783-4938-9DDB-9F29799BDD37}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C6674B63-3F8E-4E41-BC08-2B4E445460D8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C6674B63-3F8E-4E41-BC08-2B4E445460D8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C6674B63-3F8E-4E41-BC08-2B4E445460D8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C6674B63-3F8E-4E41-BC08-2B4E445460D8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

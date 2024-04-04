@@ -33,7 +33,6 @@ namespace FileTagDB.Controllers {
             }
         }
         internal void MultiNodeInsert(List<FileNode> children, int start, int count, int parentID, bool hasParent = true) {
-            // TODO: Add the IDs
             if (count == 0)
                 return;
             StringBuilder sb = new();
@@ -167,7 +166,6 @@ namespace FileTagDB.Controllers {
         }
 
 
-        // TODO: This might need a fix
         internal void AddMultipleFileRelation(int parentFileID, SQLiteDataReader reader) {
             using (var transaction = conn.BeginTransaction()) {
                 while (reader.Read()) {
@@ -192,7 +190,6 @@ namespace FileTagDB.Controllers {
         #endregion
 
 
-        // TODO: check all selects to be sure they are parameterized (since something like ':' may fail)
         #region Getting File Data
 
         internal int GetFileIDDBC(string filepath) {
