@@ -131,7 +131,7 @@ namespace FileTagDB.Controllers {
             // a good approximation
             sb.EnsureCapacity(tagQuery.Length + parts.Length * addedStringLength + (7 + addedStringLength) * (Utils.Count(tagQuery, '+')) + 3000); // ( OR )
             bool allNegative = true;
-            for(int q1=0; q1 < parts.Length; q1++) {
+            for (int q1 = 0; q1 < parts.Length; q1++) {
                 string part = parts[q1];
                 if (part[0] != '-')
                     allNegative = false;
@@ -144,11 +144,10 @@ namespace FileTagDB.Controllers {
         }
         private void AddQuery(StringBuilder sb, string part, string idPrefixed, string tableName, string idCol, string nameCol) {
             if (part.Contains('+')) {
-                string[] orGroup = part.Split();
-
+                string[] orGroup = part.Split('+');
                 sb.Append($" {idPrefixed} IN (SELECT {idCol} FROM {tableName} WHERE ");
                 for (int i = 0; i < orGroup.Length; i++)
-                    orGroup[i] = $"{nameCol} LIKE '{part}' ESCAPE '\'";
+                    orGroup[i] = $"{nameCol} LIKE '{orGroup[i]}' ESCAPE '\\'";
                 sb.Append(string.Join(" OR ", orGroup));
                 sb.Append(")");
                 sb.Append(endingAnd);

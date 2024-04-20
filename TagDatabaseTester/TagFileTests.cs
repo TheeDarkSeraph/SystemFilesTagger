@@ -471,7 +471,12 @@ namespace TagDatabaseTester {
          * And then the union results are all intersected together.
          */
         // Here we write it how we expect the user to write it
+
+        // NOTE: Write the test cases correctly, first then check, if the test case is incorrect here, then you might have 
+        //          written it incorrectly and thus will fail in EF core
         [Theory]
+        [InlineData("action_rpg+acting", 5, new int[] { }, true, new int[] { 0, 3 })]
+        [InlineData("action_rpg acting", 5, new int[] { }, true, new int[] { 3 }, new int[] { 0 })]
         [InlineData("action_rpg -acting", 5, new int[] { 0 }, false, new int[] { 3 })]
 
         [InlineData("a*", 15, new int[] { }, false, new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8 })]
@@ -636,8 +641,6 @@ namespace TagDatabaseTester {
                     filesTagsIdsActual[i].Sort();
                     Assert.Equal(filesTagsIdsActual[i], filesTagsIdsExpected[i]);
                 }
-
-
                 ClearTagFiles();
             }
         }
