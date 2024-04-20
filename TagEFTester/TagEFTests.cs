@@ -1,0 +1,671 @@
+﻿using FileTagDB;
+using FileTagEF;
+using FileTagEF.Controllers;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using System.Data;
+using Xunit.Abstractions;
+
+namespace TagEFTester {
+    public class TagEFTests {
+
+        static List<string> sampleTags = null!;
+        static List<string> sampleFiles = null!;
+        static TagController tc = new TagController();
+        static FileController fc = new FileController();
+
+        static bool hasInitialized = false;
+
+        static bool addedFilesAndTags = false;
+
+
+        #region Prints and Helper functions
+        static ITestOutputHelper output = null!;
+        static LocationManager lm = null!;
+
+        public TagEFTests(ITestOutputHelper p_output) {
+            lock (tc) {
+                if (!hasInitialized) {
+                    output = p_output;
+                    lm = LocationManager.Instance;
+                    Utils.SetPrinter(output.WriteLine);
+                    lm.DBName = "testTags.db";
+                    using (var context = DBController.GetContext()) {
+                        context.Database.EnsureDeleted();
+                        context.Database.EnsureCreated();
+                    }
+                    DataHolder.PopulateFiles();
+                    sampleFiles = DataHolder.sampleFilePaths;
+                    DataHolder.PopulateTags();
+                    sampleTags = DataHolder.sampleTags;
+
+                    DataHolder.PopulateFiles();
+                    sampleFiles = DataHolder.sampleFilePaths;
+                    DataHolder.PopulateTags();
+                    sampleTags = DataHolder.sampleTags;
+                    hasInitialized = true;
+                    AddTagAndFilesOnce();
+                }
+            }
+        }
+        internal void CleanupTables() {
+            using (var context = DBController.GetContext()) {
+                context.Database.EnsureDeleted();
+                context.Database.EnsureCreated();
+            }
+        }
+        internal void ClearTagFiles() {
+            using (var context = DBController.GetContext()) 
+                context.Database.ExecuteSqlRaw("DELETE FROM FilePathTag");
+        }
+        #endregion
+
+        #region Tag Related Test (mostly)
+        private void AddAllTags() {
+            tc.CreateTags(sampleTags);
+        }
+        private void AddAllFiles() {
+            fc.BulkAddFiles(sampleFiles); //w parent 4864 wo parent 4802-4900 // significant improvement
+            FixAllSampleFiles();
+        }
+        private void FixAllSampleFiles() {
+            for (int i = 0; i < sampleFiles.Count; i++)
+                sampleFiles[i] = FileController.FixFilePath(sampleFiles[i]);
+        }
+        private void AddTagAndFilesOnce() {
+            lock (tc) {
+                if (!addedFilesAndTags) {
+                    AddAllFiles();
+                    AddAllTags();
+                    addedFilesAndTags = true;
+                }
+            }
+        }
+        #endregion
+
+
+
+        // tag files, untag files
+        [Theory]
+        [InlineData(1, 4)]
+        [InlineData(2, 4)]
+        [InlineData(5, 8)]
+        [InlineData(10, 45)]
+        [InlineData(7, 65)]
+        public void ShouldTagAndUntagFile(int tagIndex, int fileIndex) {
+            lock (tc) {
+                List<TagDto> allTagList = tc.GetAllTags();
+                Dictionary<string, int> tagIds = new();
+                foreach (TagDto tag in allTagList)
+                    tagIds.Add(tag.name, tag.id);
+                tc.TagFile(tagIds[sampleTags[tagIndex]], fc.GetFileId(sampleFiles[fileIndex]));
+
+                List<(string, int)> taggedFiles = tc.GetFilesWithTag(tagIds[sampleTags[tagIndex]]);
+
+                Assert.True(taggedFiles[0].Item1 == sampleFiles[fileIndex]);
+
+                tc.UntagFile(tagIds[sampleTags[tagIndex]], fc.GetFileId(sampleFiles[fileIndex]));
+                taggedFiles = tc.GetFilesWithTag(tagIds[sampleTags[tagIndex]]);
+                Assert.Empty(taggedFiles);
+                ClearTagFiles();
+            }
+        }
+
+        // tag file, delete file    (tag relation should be remove, tag stays ok)
+        [Theory]
+        [InlineData(1, 4)]
+        [InlineData(2, 4)]
+        [InlineData(5, 8)]
+        [InlineData(10, 45)]
+        [InlineData(7, 65)]
+        public void ShouldTagFileAndDeleteFileAndItsLinks(int tagIndex, int fileIndex) {
+            lock (tc) { // files are readded at the end
+                List<TagDto> allTagList = tc.GetAllTags();
+                Dictionary<string, int> tagIDs = new();
+                foreach (TagDto tag in allTagList)
+                    tagIDs.Add(tag.name, tag.id);
+                List<(string, int)> taggedFiles;
+                tc.TagFile(tagIDs[sampleTags[tagIndex]], fc.GetFileId(sampleFiles[fileIndex]));
+                taggedFiles = tc.GetFilesWithTag(tagIDs[sampleTags[tagIndex]]);
+                Assert.True(taggedFiles[0].Item1 == sampleFiles[fileIndex]);
+                fc.DeleteFileOnly(sampleFiles[fileIndex]);
+                taggedFiles = tc.GetFilesWithTag(tagIDs[sampleTags[tagIndex]]);
+
+                Assert.Empty(taggedFiles);
+                allTagList = tc.GetAllTags();
+
+                tagIDs.Clear();
+                foreach (TagDto tag in allTagList)
+                    tagIDs.Add(tag.name, tag.id);
+                Assert.True(tagIDs.ContainsKey(sampleTags[tagIndex]));
+                Assert.Equal(-1, fc.GetFileId(sampleFiles[fileIndex]));
+
+
+                fc.AddFile(sampleFiles[fileIndex]);
+            }
+        }
+
+        // tag file, delete tag     (tag relation should be removed, file stays ok)[Fact]
+        [Theory]
+        [InlineData(1, 4)]
+        [InlineData(2, 4)]
+        [InlineData(5, 8)]
+        [InlineData(10, 45)]
+        [InlineData(7, 65)]
+        public void ShouldTagFileAndDeleteTagAndItsLinks(int tagIndex, int fileIndex) {
+            lock (tc) { // files are readded at the end
+                List<TagDto> allTagList = tc.GetAllTags();
+                Dictionary<string, int> tagIDs = new();
+                foreach (TagDto tag in allTagList)
+                    tagIDs.Add(tag.name, tag.id);
+
+                List<(string, int)> taggedFiles;
+                tc.TagFile(tagIDs[sampleTags[tagIndex]], fc.GetFileId(sampleFiles[fileIndex]));
+                taggedFiles = tc.GetFilesWithTag(tagIDs[sampleTags[tagIndex]]);
+                Assert.True(taggedFiles[0].Item1 == sampleFiles[fileIndex]);
+
+                // delete tag
+                tc.DeleteTag(tagIDs[sampleTags[tagIndex]]);
+                taggedFiles = tc.GetFilesWithTag(tagIDs[sampleTags[tagIndex]]);
+
+                Assert.Empty(taggedFiles);
+                allTagList = tc.GetAllTags();
+
+                tagIDs.Clear();
+                foreach (TagDto tag in allTagList)
+                    tagIDs.Add(tag.name, tag.id);
+                Assert.False(tagIDs.ContainsKey(sampleTags[tagIndex]));
+                Assert.NotEqual(-1, fc.GetFileId(sampleFiles[fileIndex]));
+
+                tc.CreateTag(sampleTags[tagIndex]);
+                ClearTagFiles();
+            }
+
+
+        }
+
+        // tag folder in database only (tag all files starting with X)
+        [Theory]
+        [InlineData(0, 1, new int[] { 1, 2 })]
+        [InlineData(0, 2, new int[] { 2 })]
+        [InlineData(0, 4, new int[] { 4, 5, 100, 1000, 6700, 6800 })]
+        [InlineData(0, 5, new int[] { 5, 100, 1000, 2000 })]
+        [InlineData(0, 6790, new int[] { 6790, 6800 })]
+        [InlineData(1, 1, new int[] { 1, 2 })]
+        [InlineData(2, 2, new int[] { 2 })]
+        [InlineData(3, 4, new int[] { 4, 5, 100, 1000, 6700, 6800 })]
+        [InlineData(4, 5, new int[] { 5, 100, 1000, 2000 })]
+        [InlineData(5, 6790, new int[] { 6790, 6800 })]
+        public void ShouldTagPathInDB(int tagIndex, int parentFolderLine, int[] taggedFilesLine) {
+            lock (tc) {
+                List<TagDto> allTagList = tc.GetAllTags();
+                Dictionary<string, int> tagIDs = new();
+                List<(string, int)> taggedFiles;
+
+                foreach (TagDto tag in allTagList)
+                    tagIDs.Add(tag.name, tag.id);
+                List<string> filepaths = new();
+                List<int> fileIdsShouldbeTagged;
+                List<(string, int)> filesInFolder;
+                List<int> fileIdsInFolder = new();
+                foreach (int fileline in taggedFilesLine)
+                    filepaths.Add(sampleFiles[fileline - 1]);
+
+
+                fileIdsShouldbeTagged = fc.GetFilesIds(filepaths);
+                int tagID = tagIDs[sampleTags[tagIndex]];
+
+                filesInFolder = fc.GetFilesWithPath(sampleFiles[parentFolderLine - 1]);
+                foreach (var file in filesInFolder)
+                    fileIdsInFolder.Add(file.Item2);
+
+
+                tc.TagFiles(tagID, fileIdsInFolder);
+
+
+                taggedFiles = tc.GetFilesWithTag(tagIDs[sampleTags[tagIndex]]);
+                HashSet<int> setOftaggedFilesIds = new HashSet<int>();
+                foreach (var fileID in taggedFiles)
+                    setOftaggedFilesIds.Add(fileID.Item2);
+                foreach (int shouldBeTagged in fileIdsShouldbeTagged)
+                    Assert.Contains(shouldBeTagged, setOftaggedFilesIds);
+
+                ClearTagFiles();
+            }
+        }
+
+        // tag multiple files (non tagged with the tag)
+        [Theory]
+        [InlineData(0, new int[] { 1, 2 })]
+        [InlineData(0, new int[] { 2 })]
+        [InlineData(0, new int[] { 4, 5, 100, 1000, 6700, 6800 })]
+        [InlineData(0, new int[] { 5, 100, 1000, 2000 })]
+        [InlineData(0, new int[] { 6790, 6800 })]
+        [InlineData(1, new int[] { 1, 2 })]
+        [InlineData(2, new int[] { 2 })]
+        [InlineData(3, new int[] { 4, 5, 100, 1000, 6700, 6800 })]
+        [InlineData(4, new int[] { 5, 100, 1000, 2000 })]
+        [InlineData(5, new int[] { 6790, 6800 })]
+        public void ShouldTagMultipleFiles(int tagIndex, int[] fileLinesToBeTagged) {
+            lock (tc) {
+                List<TagDto> allTagList = tc.GetAllTags();
+                Dictionary<string, int> tagIDs = new();
+                List<(string, int)> taggedFiles;
+
+                foreach (TagDto tag in allTagList)
+                    tagIDs.Add(tag.name, tag.id);
+                int tagID = tagIDs[sampleTags[tagIndex]];
+                Utils.LogToOutput("Tag id " + tagID);
+                List<string> filepaths = new();
+                List<int> fileIdsShouldbeTagged;
+                List<int> fileIdsToBeTagged = new();
+                foreach (int fileline in fileLinesToBeTagged)
+                    filepaths.Add(sampleFiles[fileline - 1]);
+
+                fileIdsShouldbeTagged = fc.GetFilesIds(filepaths);
+
+                tc.TagFiles(tagID, fileIdsShouldbeTagged);
+
+                taggedFiles = tc.GetFilesWithTag(tagID);
+                HashSet<int> setOftaggedFilesIds = new HashSet<int>();
+                foreach (var fileID in taggedFiles) {
+                    setOftaggedFilesIds.Add(fileID.Item2);
+                    Utils.LogToOutput("tagged file ids found " + fileID.Item2);
+                }
+                foreach (int shouldBeTagged in fileIdsShouldbeTagged)
+                    Assert.Contains(shouldBeTagged, setOftaggedFilesIds);
+
+                ClearTagFiles();
+            }
+        }
+        // tag multiple files (some already having the tag)
+        [Theory]
+        [InlineData(4, new int[] { 1, 2 }, new int[] { 1 })]
+        [InlineData(8, new int[] { 4, 5, 100, 1000, 6700, 6800 }, new int[] { 5, 6700, 6800 })]
+        [InlineData(14, new int[] { 5, 100, 1000, 2000 }, new int[] { 5, 2000 })]
+        [InlineData(16, new int[] { 6790, 6800 }, new int[] { 6800 })]
+        public void ShouldTagMultipleFilesWithSomeHavingTheTagPreAdded(int tagIndex, int[] fileLinesToBeTagged, int[] preaddedSubsetFileLines) {
+            lock (tc) {
+                List<TagDto> allTagList = tc.GetAllTags();
+                Dictionary<string, int> tagIDs = new();
+                List<(string, int)> taggedFiles;
+
+                foreach (TagDto tag in allTagList)
+                    tagIDs.Add(tag.name, tag.id);
+                List<string> filepaths = new();
+                List<int> fileIdsShouldbeTagged;
+                int tagID = tagIDs[sampleTags[tagIndex]];
+                // preadd tags
+
+
+                foreach (int fileline in preaddedSubsetFileLines)
+                    filepaths.Add(sampleFiles[fileline - 1]);
+                fileIdsShouldbeTagged = fc.GetFilesIds(filepaths);
+                tc.TagFiles(tagID, fileIdsShouldbeTagged);
+
+                filepaths.Clear();
+                // add all tags
+                foreach (int fileline in fileLinesToBeTagged)
+                    filepaths.Add(sampleFiles[fileline - 1]);
+                fileIdsShouldbeTagged = fc.GetFilesIds(filepaths);
+                tc.TagFiles(tagID, fileIdsShouldbeTagged);
+
+                taggedFiles = tc.GetFilesWithTag(tagIDs[sampleTags[tagIndex]]);
+                HashSet<int> setOftaggedFilesIds = new HashSet<int>();
+                foreach (var fileID in taggedFiles)
+                    setOftaggedFilesIds.Add(fileID.Item2);
+                foreach (int shouldBeTagged in fileIdsShouldbeTagged)
+                    Assert.Contains(shouldBeTagged, setOftaggedFilesIds);
+
+                ClearTagFiles();
+            }
+
+        }
+
+        // untag multiple files (some tagged some not)
+
+
+        [Theory]
+        [InlineData(0, 1, new int[] { 1, 2 })]
+        [InlineData(0, 2, new int[] { 2 })]
+        [InlineData(0, 4, new int[] { 4, 5, 100, 1000, 6700, 6800 })]
+        [InlineData(0, 5, new int[] { 5, 100, 1000, 2000 })]
+        [InlineData(0, 6790, new int[] { 6790, 6800 })]
+        [InlineData(1, 1, new int[] { 1, 2 })]
+        [InlineData(2, 2, new int[] { 2 })]
+        [InlineData(3, 4, new int[] { 4, 5, 100, 1000, 6700, 6800 })]
+        [InlineData(4, 5, new int[] { 5, 100, 1000, 2000 })]
+        [InlineData(5, 6790, new int[] { 6790, 6800 })]
+        public void ShouldUntagMultipleFiles(int tagIndex, int parentFolderLine, int[] untaggedFilesLine) {
+            lock (tc) {
+                List<TagDto> allTagList = tc.GetAllTags();
+                Dictionary<string, int> tagIDs = new();
+                List<(string, int)> taggedFiles;
+
+                foreach (TagDto tag in allTagList)
+                    tagIDs.Add(tag.name, tag.id);
+                List<string> filepaths = new();
+                List<int> fileIdsShouldNotbeTagged;
+                List<(string, int)> filesInFolder;
+                List<int> fileIdsInFolder = new();
+                foreach (int fileline in untaggedFilesLine)
+                    filepaths.Add(sampleFiles[fileline - 1]);
+
+
+                fileIdsShouldNotbeTagged = fc.GetFilesIds(filepaths);
+                int tagID = tagIDs[sampleTags[tagIndex]];
+                var watch = System.Diagnostics.Stopwatch.StartNew();
+
+                filesInFolder = fc.GetFilesWithPath(sampleFiles[parentFolderLine - 1]);
+                watch.Stop();
+                Utils.LogToOutput("Getting file with path time " + watch.ElapsedMilliseconds);
+
+                foreach (var file in filesInFolder)
+                    fileIdsInFolder.Add(file.Item2);
+
+                watch = System.Diagnostics.Stopwatch.StartNew();
+                tc.TagFiles(tagID, fileIdsInFolder);
+                watch.Stop();
+                Utils.LogToOutput("Tagging time " + watch.ElapsedMilliseconds); // 240 seconds? for file line 4 
+
+                watch = System.Diagnostics.Stopwatch.StartNew();
+                tc.UntagFiles(tagID, fileIdsShouldNotbeTagged);
+                watch.Stop();
+                Utils.LogToOutput("untagging time " + watch.ElapsedMilliseconds);
+
+
+                taggedFiles = tc.GetFilesWithTag(tagIDs[sampleTags[tagIndex]]);
+                HashSet<int> setOftaggedFilesIds = new HashSet<int>();
+                foreach (var fileID in taggedFiles)
+                    setOftaggedFilesIds.Add(fileID.Item2);
+                foreach (int shouldNotBeTagged in fileIdsShouldNotbeTagged)
+                    Assert.DoesNotContain(shouldNotBeTagged, setOftaggedFilesIds);
+                ClearTagFiles();
+            }
+        }
+
+
+        [Theory]
+        [InlineData(0, 1, 2, new int[] { 2 })]
+        public void ShouldUntagPath(int tagIndex, int parentFolderLine, int folderLineToUntag, int[] untaggedFilesLine) {
+            lock (tc) {
+                List<TagDto> allTagList = tc.GetAllTags();
+                Dictionary<string, int> tagIDs = new();
+                List<(string, int)> taggedFiles;
+
+                foreach (TagDto tag in allTagList)
+                    tagIDs.Add(tag.name, tag.id);
+                List<string> filepaths = new();
+                List<int> fileIdsShouldNotbeTagged;
+                List<(string, int)> filesInFolder;
+                List<int> fileIdsInFolder = new();
+                foreach (int fileline in untaggedFilesLine)
+                    filepaths.Add(sampleFiles[fileline - 1]);
+
+
+                fileIdsShouldNotbeTagged = fc.GetFilesIds(filepaths);
+                int tagID = tagIDs[sampleTags[tagIndex]];
+
+                filesInFolder = fc.GetFilesWithPath(sampleFiles[parentFolderLine - 1]);
+                foreach (var file in filesInFolder)
+                    fileIdsInFolder.Add(file.Item2);
+
+
+                tc.TagFiles(tagID, fileIdsInFolder);
+
+                filesInFolder = fc.GetFilesWithPath(sampleFiles[folderLineToUntag - 1]);
+                fileIdsInFolder.Clear();
+                foreach (var file in filesInFolder)
+                    fileIdsInFolder.Add(file.Item2);
+                tc.UntagFiles(tagID, fileIdsInFolder);
+
+
+                taggedFiles = tc.GetFilesWithTag(tagIDs[sampleTags[tagIndex]]);
+                HashSet<int> setOftaggedFilesIds = new HashSet<int>();
+                foreach (var fileID in taggedFiles)
+                    setOftaggedFilesIds.Add(fileID.Item2);
+                foreach (int shouldNotBeTagged in fileIdsShouldNotbeTagged)
+                    Assert.DoesNotContain(shouldNotBeTagged, setOftaggedFilesIds);
+                ClearTagFiles();
+            }
+        }
+
+        private List<string> SubListFiles(int startLine, int endLine) {
+            List<string> files = new();
+            for (int i = startLine - 1; i < endLine; i++)
+                files.Add(sampleFiles[i]);
+            return files;
+        }
+        /* query format:
+         * 1- search query
+         * 2- file step (how much to move the start by when including tags to files)
+         *      (affects overlapping region)
+         * 3- Word indicies to be included
+         * 4- Word indicies to be excluded 
+         * 
+         * This test wouldnt work, we need something like, unions and intersections
+         * Modify '3' to be arrays of unions. every array will contain things that will be unioned together
+         * And then the union results are all intersected together.
+         */
+        // Here we write it how we expect the user to write it
+
+        // TODO: we dont actually have a way of tasting union + with this setup...
+
+        // NOTE: Write the test cases correctly, first then check, if the test case is incorrect here, then you might have 
+        //          written it incorrectly and thus will fail in EF core
+        [Theory]
+        [InlineData("action_rpg+acting", 5, new int[] { }, true, new int[] { 0,3 })]
+        [InlineData("action_rpg acting", 5, new int[] { }, true, new int[] { 3 }, new int[] { 0 })]
+        [InlineData("action_rpg -acting", 5, new int[] { 0 }, false, new int[] { 3 })]
+
+        [InlineData("a*", 15, new int[] { }, false, new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8 })]
+        [InlineData("A*", 15, new int[] { }, false, new int[] { 9 })]
+
+        [InlineData("a*", 15, new int[] { }, true, new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 })]
+        [InlineData("A*", 15, new int[] { }, true, new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 })]
+
+        [InlineData("*a*", 15, new int[] { }, false, new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 17, 19, 22, 23, 24, 25, 26, 27, 29, 30, 31, 33, 34 })]
+
+        [InlineData("r* t*", 15, new int[] { }, false, new int[] { 20, 21, 22, 23, 24 }, new int[] { 31, 32, 33, 34 })]
+        [InlineData("r* t* -role*", 15, new int[] { 22, 23, 24 }, false, new int[] { 20, 21, 22, 23, 24 }, new int[] { 31, 32, 33, 34 })]
+
+        [InlineData("a* -act*", 15, new int[] { 0, 1, 2, 3, 4, 5, 6 }, false, new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8 })]
+        [InlineData("acting fighting strategy", 15, new int[] { }, false, new int[] { 0 }, new int[] { 14 }, new int[] { 29 })]
+
+
+
+        public void GetFilesWithTagSearchCombination(string query, int filestep, int[] excludedIndicies, bool ignoreCase, params int[][] includedIndicies) {
+            lock (tc) {
+                // for this test I think it is better to create our tags and test the queries ourselves
+                // act* act___ a* A* (one ignore case 'A' and one dont)
+
+                List<string> nT =new List<string>()
+                {   // 0           1            2               3             4               5
+                    "acting" , "action" , "action_based" , "action_rpg" , "action's" , "action\"s%_@!#$" ,
+                    // 6            7            8            9             10            11          12
+                    "active" , "adventure" , "animals" , "Apocalypse" , "beatemup" , "boss_based" , "easy" ,
+                    //   13             14         15       16        17      18           19            20
+                    "fight_based" , "fighting" , "flow" , "grind" , "hard" , "kids" , "platformer" , "roguelike" ,
+                    //   21           22                23                  24           25         26
+                    "roguelite" , "roleplay" , "roleplay_adventure" , "roleplay_solo" , "sad" , "sandbox" ,
+                    //    27           28         29              30             31         32          33
+                    "singleplayer" , "solo" , "strategy" , "strategy_based" , "tactics" , "time" , "time_based" ,
+                    //   34         35
+                    "turn_based" , "zoo"
+                };
+                // total 36 for now so we need  to have overlaps to understand what will be visible
+                // 1, 1..2, 1..3,1..4,.... till 1..end, then 2..end,3..end and so on
+                // But in reverse... hmmm, maybe do the tags 1 matches 1..36, 2 matches 2..37 and so on
+                Utils.LogToOutput("Added tags : " + tc.CreateTags(nT));
+
+                List<TagDto> allTagList = tc.GetAllTags();
+                Dictionary<string, int> tagIDs = new();
+                foreach (TagDto tag in allTagList)
+                    tagIDs.Add(tag.name, tag.id);
+
+                Dictionary<string, int> filesLines = new();
+
+                for (int i = 0; i < sampleFiles.Count; i++)
+                    filesLines.Add(sampleFiles[i], i + 1);
+
+                int filestart = 1;
+                int step = filestep;
+                var watch = System.Diagnostics.Stopwatch.StartNew();
+                // NOTE: This can be optimized twice, first opt, is to get all ids at once and split list send
+                //          2nd would require a function call tagfiles to take a list of tags and specify steps (it would be custom
+                for (int i = 0; i < nT.Count; i++) {
+                    tc.TagFiles(tagIDs[nT[i]], fc.GetFilesIds(SubListFiles(filestart + i * step, filestart + i * step + nT.Count)));
+                    //Utils.LogToOutput($"This tag {nT[i]} with files from lines {filestart + i * step} to {filestart + i * step + nT.Count}");
+                }
+                watch.Stop();
+                Utils.LogToOutput("inserting time " + watch.ElapsedMilliseconds);
+
+                // -acting is 1 to 127 (121 to 127, because they have action_rpg, so they have action rpg tags) which is clearly, then 151 to rest
+                // Both intersect and AND seem to work as expected, but not as intended...
+                // The way -word works is it translates to anything that does not only have "acting"
+                //
+                watch = System.Diagnostics.Stopwatch.StartNew();
+
+                List<(string, int)> filesGot = tc.GetFilesWithTagQuery(query, ignoreCase);
+                watch.Stop();
+                Utils.LogToOutput("compound query time " + watch.ElapsedMilliseconds);
+
+
+                SortedSet<int> linesContained = new();
+                for (int i = 0; i < filesGot.Count; i++) {
+                    try {
+                        linesContained.Add(filesLines[filesGot[i].Item1]);
+                    } catch { }
+                }
+                List<SortedSet<int>> intersections = new();
+                foreach (int[] unionIndicies in includedIndicies) {
+                    SortedSet<int> unionSet = new SortedSet<int>();
+                    foreach (int index in unionIndicies) {
+                        int endj = filestart + index * step + nT.Count;
+                        for (int j = filestart + index * step; j <= endj; j++)
+                            unionSet.Add(j);
+                    }
+                    intersections.Add(unionSet);
+                }
+                SortedSet<int> linesToHave = new();
+                linesToHave.UnionWith(intersections[0]);
+                for (int i = 1; i < intersections.Count; i++)
+                    linesToHave.IntersectWith(intersections[1]);
+                foreach (int index in excludedIndicies) {
+                    int endj = filestart + index * step + nT.Count;
+                    for (int j = filestart + index * step; j <= endj; j++)
+                        linesToHave.Remove(j);
+                }
+                Utils.LogToOutput("Compare: ");
+                Utils.LogToOutput(string.Join(",", linesToHave));
+                Utils.LogToOutput("Got: ");
+                Utils.LogToOutput(string.Join(",", linesContained));
+                Assert.Equal(linesToHave, linesContained);
+                ClearTagFiles();
+            }
+        }
+
+
+
+        [Fact]
+        public void ShouldGetFileTags() {
+            // return list of tag ids
+            lock (tc) {
+                // First we tag a file with multiple tags, then we retrieve its tags
+                // generate random integers, tag them to a file, verify that the file has those tags
+                Random rnd = new Random();
+                List<TagDto> tags = tc.GetAllTags().OrderBy(x => rnd.Next()).Take(12).ToList();
+                List<int> tagIds = tags.Select(x => x.id).ToList();
+                int fileId = fc.GetFileId(sampleFiles[10]);
+                tagIds.ForEach(tagId => tc.TagFile(tagId, fileId));
+                tagIds.Sort();
+
+                List<int> fileTags = tc.GetFileTags(sampleFiles[10]);
+                fileTags.Sort();
+                Assert.Equal(fileTags, tagIds);
+
+                fileTags = tc.GetFileTags(fileId);
+                fileTags.Sort();
+                Assert.Equal(fileTags, tagIds);
+
+                ClearTagFiles();
+            }
+        }
+        [Fact]
+        public void ShouldListOfFilesAssociatedTagsIndividually() { // return list of list
+            lock (tc) {
+                // same as above but with multiple files
+                Random rnd = new Random();
+                List<List<int>> filesTagsIdsExpected = new();
+                List<int> fileIds = new();
+                List<string> files = new List<string>() { sampleFiles[3], sampleFiles[8], sampleFiles[13] };
+                files.ForEach(filename => {
+                    List<TagDto> tags = tc.GetAllTags().OrderBy(x => rnd.Next()).Take(12).ToList();
+                    List<int> tagIds = tags.Select(x => x.id).ToList();
+
+                    int fileId = fc.GetFileId(filename);
+                    tagIds.ForEach(tagId => tc.TagFile(tagId, fileId));
+                    filesTagsIdsExpected.Add(tagIds);
+                });
+
+                var watch = System.Diagnostics.Stopwatch.StartNew();
+                List<List<int>> filesTagsIdsActual = tc.GetFilesTags(files);
+                watch.Stop();
+                Utils.LogToOutput("gettags with file names: " + watch.ElapsedMilliseconds);
+                Utils.LogToOutput("actual");
+
+                foreach ( var v in filesTagsIdsActual) {
+                    Utils.LogToOutput(string.Join(",", v));
+                }
+                Utils.LogToOutput("expected");
+
+                foreach (var v in filesTagsIdsExpected) {
+                    Utils.LogToOutput(string.Join(",", v));
+                }
+
+                Assert.Equal(filesTagsIdsActual.Count, filesTagsIdsExpected.Count);
+                Utils.LogToOutput(string.Join(",", filesTagsIdsActual));
+                Utils.LogToOutput(string.Join(",", filesTagsIdsExpected));
+                for (int i = 0; i < filesTagsIdsExpected.Count; i++) {
+                    filesTagsIdsExpected[i].Sort();
+                    filesTagsIdsActual[i].Sort();
+                    Assert.Equal(filesTagsIdsActual[i], filesTagsIdsExpected[i]);
+                }
+
+                ClearTagFiles();
+            }
+        }
+
+
+        // So, number of files to tag, number of tags for each one, number of files remaining
+        [Theory]
+        [InlineData(0, new int[0])]
+        [InlineData(1, new int[] { 4 })]
+        [InlineData(4, new int[] { 1, 3, 2, 6 })]
+
+        public void ShouldDeleteUntaggedFilesFromDB(int filesToTag, int[] tagsPerFile) {
+            Assert.Equal(filesToTag, tagsPerFile.Length);
+            foreach (int x in tagsPerFile)
+                Assert.True(x > 0);
+            Random rnd = new Random();
+            var tagOriginalList = tc.GetAllTags().OrderBy(x => rnd.Next());
+            sampleFiles = sampleFiles.OrderBy(x => rnd.Next()).ToList();
+            lock (tc) {
+                int start = 0;
+                for (int i = 0; i < filesToTag; i++) {
+                    int fileId = fc.GetFileId(sampleFiles[i]); // randomly ordered file list
+                    List<int> tagIds = tagOriginalList.Skip(start).Take(tagsPerFile[i]).Select(x => x.id).ToList();
+                    start += tagsPerFile[i];
+                    tagIds.ForEach(tagId => tc.TagFile(tagId, fileId));
+                }
+                tc.RemoveFilesWithoutTags();
+
+                Assert.Equal(filesToTag, fc.CountFiles());
+
+                // Reset for doing test again...
+                ClearTagFiles();
+                fc.BulkAddFiles(sampleFiles); // since we will delete
+            }
+        }
+    }
+}

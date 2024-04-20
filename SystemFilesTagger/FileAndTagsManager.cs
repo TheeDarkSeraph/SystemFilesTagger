@@ -208,7 +208,7 @@ namespace FileTagDB {
             if (currentNode == null)
                 return;
 
-            if (e.Node.Text == Consts.fileExtensions || e.Node.Text == Consts.customTags) {
+            if (currentNode.Text == Consts.fileExtensions || currentNode.Text == Consts.customTags) {
                 MessageBox.Show("Checking/Unchecking parent categories does not do anything, " +
                     "they are here because they look bad in the child nodes in winforms if removed with the work around",
                     "Please don't do that, it is ineffective", MessageBoxButtons.OK);
@@ -901,9 +901,11 @@ namespace FileTagDB {
                 (uint)Marshal.SizeOf(shfi),
                 flags);
 
-            if (res == IntPtr.Zero)
-                throw Marshal.GetExceptionForHR(Marshal.GetHRForLastWin32Error());
-
+            if (res == IntPtr.Zero) {
+                Exception? e = Marshal.GetExceptionForHR(Marshal.GetHRForLastWin32Error());
+                if(e!=null)
+                    throw e;
+            }
             // Load the icon from an HICON handle  
             Icon.FromHandle(shfi.hIcon);
 

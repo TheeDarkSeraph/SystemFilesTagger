@@ -15,7 +15,7 @@ namespace FileTagDB {
             }
             try {
                 printer(msg);
-            }catch(Exception e) {
+            }catch(Exception) {
                 Console.WriteLine(msg);
                 printer = null;
             }
@@ -97,7 +97,6 @@ namespace FileTagDB {
                 return string.Empty;
             }
         }
-
         //[GeneratedRegex(@"\s+")]
         //public static partial Regex AnyWhiteSpace();
     }
