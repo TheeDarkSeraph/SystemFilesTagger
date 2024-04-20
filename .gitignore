@@ -399,3 +399,5 @@ FodyWeavers.xsd
 
 TagDatabaseTester/filepaths.txt
 TagDatabaseTester/taglist.txt
+/TagEFTester/filepaths.txt
+/TagEFTester/taglist.txt

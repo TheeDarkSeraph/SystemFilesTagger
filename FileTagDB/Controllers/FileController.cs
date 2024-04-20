@@ -86,6 +86,10 @@ namespace FileTagDB.Controllers {
             // we can return last row ID, and affected rows
         }
 
+        /// <summary>
+        /// Note that the pathes passed get fixed here
+        /// </summary>
+        /// <param name="p_paths"></param>
         public void BulkAddFiles(List<string> p_paths) {
             //Utils.LogToOutput("COUNT OF FILES " + p_paths.Count);
             List<string> paths = new(p_paths);
@@ -163,7 +167,7 @@ namespace FileTagDB.Controllers {
         public int GetFileID(string filepath) {
             int fileID;
             ConnectDB();
-            fileID = GetFileIDDBC(filepath);
+            fileID = GetFileIDDBC(FixFilePath(filepath));
             DisconnectDB();
             return fileID;
         }
@@ -171,7 +175,7 @@ namespace FileTagDB.Controllers {
             List<int> filesIds = new();
             ConnectDB();
             foreach (string filepath in filepaths)
-                filesIds.Add(GetFileIDDBC(filepath));
+                filesIds.Add(GetFileIDDBC(FixFilePath(filepath)));
             DisconnectDB();
             return filesIds;
         }
@@ -183,7 +187,7 @@ namespace FileTagDB.Controllers {
         }
         public List<(string, int)> GetFileChildren(string filepath) {
             ConnectDB();
-            int fileID = GetFileIDDBC(filepath);
+            int fileID = GetFileIDDBC(FixFilePath(filepath));
             if (-1 == fileID) {
                 DisconnectDB();
                 return new();

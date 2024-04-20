@@ -22,8 +22,8 @@ namespace TagDatabaseTester {
         static bool hasInitialized = false;
 
         #region Prints, Helper and Init functions
-        private readonly ITestOutputHelper output;
-        private readonly DBLocationManager lm;
+        private readonly ITestOutputHelper output = null!;
+        private readonly DBLocationManager lm = null!;
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
         public TagTests(ITestOutputHelper output) {

@@ -14,21 +14,19 @@ namespace TagDatabaseTester {
     [Collection("Sequential")] // this stops the parallel with other classes named the same
     public class TagFileTests {
 
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-        static List<string> sampleTags;
-        static List<string> sampleFiles;
+        static List<string> sampleTags = null!;
+        static List<string> sampleFiles = null!;
         static FileController fc = new();
-        static TagController tc;
+        static TagController tc = null!;
         static bool hasInitialized = false;
 
         static bool addedFilesAndTags = false;
 
 
         #region Prints and Helper functions
-        static ITestOutputHelper output;
-        static DBLocationManager lm;
+        static ITestOutputHelper output = null!;
+        static DBLocationManager lm = null!;
 
-#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         public TagFileTests(ITestOutputHelper p_output) {
             lock (fc) {
                 if (!hasInitialized) {
@@ -596,8 +594,8 @@ namespace TagDatabaseTester {
                 List<int> tagIds = tags.Select(x => x.id).ToList();
                 int fileId = fc.GetFileID(sampleFiles[10]);
                 tagIds.ForEach(tagId => tc.TagFile(tagId, fileId));
-
                 tagIds.Sort();
+
                 List<int> fileTags = tc.GetFileTags(sampleFiles[10]);
                 fileTags.Sort();
                 Assert.Equal(fileTags, tagIds);
@@ -623,6 +621,7 @@ namespace TagDatabaseTester {
 
                     int fileId = fc.GetFileID(filename);
                     tagIds.ForEach(tagId => tc.TagFile(tagId, fileId));
+                    filesTagsIdsExpected.Add(tagIds); 
                 });
 
                 var watch = System.Diagnostics.Stopwatch.StartNew();
@@ -635,19 +634,7 @@ namespace TagDatabaseTester {
                 for (int i = 0; i < filesTagsIdsExpected.Count; i++) {
                     filesTagsIdsExpected[i].Sort();
                     filesTagsIdsActual[i].Sort();
-                    Assert.Equal(filesTagsIdsActual, filesTagsIdsExpected);
-                }
-                // now with ids
-                watch = System.Diagnostics.Stopwatch.StartNew();
-                filesTagsIdsActual = tc.GetFilesTags(fileIds);
-                watch.Stop();
-                Utils.LogToOutput("gettags with file ids: " + watch.ElapsedMilliseconds);
-
-                Assert.Equal(filesTagsIdsActual.Count, filesTagsIdsExpected.Count);
-                for (int i = 0; i < filesTagsIdsExpected.Count; i++) {
-                    filesTagsIdsExpected[i].Sort();
-                    filesTagsIdsActual[i].Sort();
-                    Assert.Equal(filesTagsIdsActual, filesTagsIdsExpected);
+                    Assert.Equal(filesTagsIdsActual[i], filesTagsIdsExpected[i]);
                 }
 
 

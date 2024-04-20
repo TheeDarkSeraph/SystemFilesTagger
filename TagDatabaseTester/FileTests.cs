@@ -1,14 +1,7 @@
 ﻿using FileTagDB.Controllers;
 using FileTagDB;
-using System;
-using System.Collections.Generic;
 using System.Data.SQLite;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Xunit.Abstractions;
-using System.Diagnostics;
-using System.Reflection;
 
 namespace TagDatabaseTester {
     // NOTE: run tests individually, the sequential calls were not implemented

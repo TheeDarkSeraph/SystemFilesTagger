@@ -5,25 +5,25 @@ using System.Text.RegularExpressions;
 namespace FileTagDB.Controllers {
     public partial class TagController {
         // NOTE: We will not handle ensuring file IDs here
-        public void TagFile(int tagID, int fileID) {
+        public void TagFile(int tagId, int fileId) {
             ConnectDB();
-            TagFileConnected(tagID, fileID);
+            TagFileConnected(tagId, fileId);
             DisconnectDB();
         }
-        public void TagFiles(int tagID, List<int> fileIDs) { // files are assumed to be in DB
+        public void TagFiles(int tagId, List<int> fileIds) { // files are assumed to be in DB
             ConnectDB();
-            TagFilesConnected(tagID, fileIDs);
+            TagFilesConnected(tagId, fileIds);
             DisconnectDB();
             // get all IDs, then untag them
         }
-        public void UntagFile(int tagID, int fileID) {
+        public void UntagFile(int tagId, int fileId) {
             ConnectDB();
-            UntagFileConnected(tagID, fileID);
+            UntagFileConnected(tagId, fileId);
             DisconnectDB();
         }
-        public void UntagFiles(int tagID, List<int> fileIDs) {
+        public void UntagFiles(int tagId, List<int> fileIds) {
             ConnectDB();
-            UntagFilesConnected(tagID, fileIDs);
+            UntagFilesConnected(tagId, fileIds);
             DisconnectDB();
         }
 
@@ -65,7 +65,7 @@ namespace FileTagDB.Controllers {
             return filesTags;
         }
 
-        public List<(string,int)> GetFilesWithTag(int tagID) {
+        public List<(string,int)> GetFilesWithTag(int tagId) {
             List<(string, int)> fileRows = new();
             ConnectDB();
             using (var cmd = new SQLiteCommand(conn)) {
@@ -73,7 +73,7 @@ namespace FileTagDB.Controllers {
                     @$"SELECT filep.* FROM {TableConst.filesTName} filep JOIN
                     {TableConst.fileTagsTName} ft ON
                     ft.{TableConst.fileTagsCoFID} = filep.{TableConst.filesCoID}
-                    WHERE ft.{TableConst.fileTagsCoTID} = {tagID}
+                    WHERE ft.{TableConst.fileTagsCoTID} = {tagId}
                 "); // direct child only!
                 while (reader.Read())
                     fileRows.Add(new((string)reader[$"{TableConst.filesCoPath}"], Convert.ToInt32(reader[$"{TableConst.filesCoID}"])));
@@ -81,6 +81,7 @@ namespace FileTagDB.Controllers {
             DisconnectDB();
             return fileRows;
         }
+
         public List<(string,int)>GetFilesWithTagQuery(string tagQuery, bool ignoreCase) {
             Utils.LogToOutput("Original query " + tagQuery);
             string idPrefix = $"ft.{TableConst.fileTagsCoTID}";
@@ -187,9 +188,6 @@ namespace FileTagDB.Controllers {
             return sb.ToString();
         }
 
-        public object GetTagID(Func<object, int> value) {
-            throw new NotImplementedException();
-        }
     }
 
 
