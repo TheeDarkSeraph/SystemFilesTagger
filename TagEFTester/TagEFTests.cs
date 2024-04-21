@@ -7,6 +7,7 @@ using System.Data;
 using Xunit.Abstractions;
 
 namespace TagEFTester {
+    [Collection("Sequential")] 
     public class TagEFTests {
 
         static List<string> sampleTags = null!;

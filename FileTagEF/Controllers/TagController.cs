@@ -58,7 +58,7 @@ namespace FileTagEF.Controllers {
         public string GetTagName(int tagID) {
             using (context = DBController.GetContext()) {
                 Tag? tag = context.Tags.Where(t => t.Id == tagID).AsNoTracking().FirstOrDefault();
-                return tag == null ? string.Empty : tag.Name;
+                return tag == null ? "+NotFound" : tag.Name;
             }
         }
         // won't be used, tags will be kept in memory prolly for faster processing of user requests and suggestions, 1 mil of average 7 chars is 11MB roughly which is still nothing
@@ -82,10 +82,15 @@ namespace FileTagEF.Controllers {
         #endregion
 
         #region Rename Tag
-        public int RenameTag(int tagID, string newName) {
+        public int RenameTag(int tagId, string newName) {
             using (context = DBController.GetContext()) {
-                Tag? tag = context.Tags.Where(t => t.Id == tagID).FirstOrDefault();
+                Tag? tag = context.Tags.Where(t => t.Id == tagId).FirstOrDefault();
                 if (tag == null) 
+                    return -1;
+                if (tag.Name == newName)
+                    return tag.Id;
+                Tag? tag2 = context.Tags.Where(t => t.Name == newName).FirstOrDefault();
+                if (tag2 != null) // name already used
                     return -1;
                 tag.Name = newName;
                 context.SaveChanges();

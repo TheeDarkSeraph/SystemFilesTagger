@@ -1,74 +1,49 @@
-﻿using FileTagDB.Controllers;
-using FileTagDB;
+﻿using FileTagDB;
+using FileTagEF;
+using FileTagEF.Controllers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit.Abstractions;
-using System.Data.SQLite;
-using FileTagDB.Models;
 
-namespace TagDatabaseTester {
-    [Collection("Sequential")] // this stops the parallel with other classes named the same
-    // also it makes them run sequentially
-    public class TagTests {
+namespace TagEFTester {
+    [Collection("Sequential")] 
+    public class TagBasicEFTests {
+        // add the tag tests
 
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-
-        static List<string> sampleTags;
-        static TagController tc;
-        static FileController fc = new();
+        static List<string> sampleTags = null!;
+        static readonly TagController tc = new TagController();
+        static readonly FileController fc = new FileController();
         static bool hasInitialized = false;
 
         #region Prints, Helper and Init functions
         private readonly ITestOutputHelper output = null!;
-        private readonly DBLocationManager lm = null!;
+        private readonly LocationManager lm = null!;
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
-        public TagTests(ITestOutputHelper p_output) {
+        public TagBasicEFTests(ITestOutputHelper p_output) {
             lock (fc) {
                 if (!hasInitialized) {
                     output = p_output;
-                    lm = DBLocationManager.Instance;
+                    lm = LocationManager.Instance;
                     Utils.SetPrinter(output.WriteLine);
                     lm.DBName = "testTags.db";
-                    DBController.DeleteDB(lm.DBLocation, lm.DBName); // make sure its not there to begin with
+                    using (var context = DBController.GetContext()) {
+                        context.Database.EnsureDeleted();
+                        context.Database.EnsureCreated();
+                    }
                     DataHolder.PopulateTags();
                     sampleTags = DataHolder.sampleTags;
-                    tc = new TagController(fc);
-                    CreateEmptyTestDBWithTables();
                     hasInitialized = true;
                 }
             }
         }
-        internal void CreateTestDB() {
-            DBController.CreateDBIfNotExist(lm.DBLocation, lm.DBName);
-            Assert.True(File.Exists(Path.Combine(lm.DBLocation, lm.DBName)));
-        }
-        internal void DeleteTestDB() {
-            DBController.DeleteDB(lm.DBLocation, lm.DBName);
-            Assert.True(!File.Exists(Path.Combine(lm.DBLocation, lm.DBName)));
-        }
-        internal void CreateEmptyTestDBWithTables() {
-            CreateTestDB();
-            using (var conn = DBController.GetDBConnection()) {
-                conn.Open();
-                foreach (string name in TableConst.allTables)
-                    using (var cmd = new SQLiteCommand(conn)) {
-                        cmd.CommandText = $"select * from {name}";
-                        var result = cmd.ExecuteReader();
-                        Assert.Equal(2, result.FieldCount);
-                        cmd.Dispose(); // this is important to instantly unlock...
-                    }
-                conn.Close();
-            }
-        }
         internal void CleanupTables() {
-            using (var conn = DBController.GetDBConnection()) {
-                conn.Open();
-                DBController.DeleteTablesData(conn);
-                conn.Close();
+            using (var context = DBController.GetContext()) {
+                context.Database.EnsureDeleted();
+                context.Database.EnsureCreated();
             }
         }
         #endregion
@@ -95,11 +70,10 @@ namespace TagDatabaseTester {
         [InlineData(3)]
         [InlineData(4)]
         public void ShouldNotCreateDuplicateTag(int tagIndex) {
-
             lock (tc) {
                 tc.CreateTag(sampleTags[tagIndex]);
                 int tagID = tc.CreateTag(sampleTags[tagIndex]);
-                Assert.Equal(-1, tagID);
+                Assert.NotEqual(-1, tagID);
                 CleanupTables();
             }
         }
@@ -108,8 +82,8 @@ namespace TagDatabaseTester {
         [InlineData(new int[] { 0, 5, 7, 9, 10, 5, 9, 8, 10 }, 6)]
         [InlineData(new int[] { 10, 20, 15, 24, 31 }, 5)]
         public void ShouldCreateTags(int[] tagIDs, int totalCreated) {
-            lock(tc){
-                foreach(int tagID in tagIDs) {
+            lock (tc) {
+                foreach (int tagID in tagIDs) {
                     tc.CreateTag(sampleTags[tagID]);
                 }
                 Assert.Equal(totalCreated, tc.CountTags());
@@ -125,14 +99,14 @@ namespace TagDatabaseTester {
                 sampleTags[1] += "''";
                 sampleTags[2] += "''\"''";
                 sampleTags[3] += "غثغثyes' fed' \"يبنثبثشي";
-                tc.CreateTag(sampleTags[0]);
-                tc.CreateTag(sampleTags[1]);
-                tc.CreateTag(sampleTags[2]);
-                tc.CreateTag(sampleTags[3]);
-                Assert.Equal(sampleTags[0], tc.GetTagName(1));
-                Assert.Equal(sampleTags[1], tc.GetTagName(2));
-                Assert.Equal(sampleTags[2], tc.GetTagName(3));
-                Assert.Equal(sampleTags[3], tc.GetTagName(4));
+                int id1 = tc.CreateTag(sampleTags[0]);
+                int id2 = tc.CreateTag(sampleTags[1]);
+                int id3 = tc.CreateTag(sampleTags[2]);
+                int id4 = tc.CreateTag(sampleTags[3]);
+                Assert.Equal(sampleTags[0], tc.GetTagName(id1));
+                Assert.Equal(sampleTags[1], tc.GetTagName(id2));
+                Assert.Equal(sampleTags[2], tc.GetTagName(id3));
+                Assert.Equal(sampleTags[3], tc.GetTagName(id4));
                 Assert.Equal(4, tc.CountTags());
                 CleanupTables();
             }
@@ -143,8 +117,9 @@ namespace TagDatabaseTester {
             // test arabic, test many quotations (even and odd) test '$'
             lock (tc) {
                 sampleTags[0] += "_%";
-                tc.CreateTag(sampleTags[0]);
-                Assert.Equal(sampleTags[0], tc.GetTagName(1));
+                int tagId = tc.CreateTag(sampleTags[0]);
+                Utils.LogToOutput($"Tag id {tagId}");
+                Assert.Equal(sampleTags[0], tc.GetTagName(tagId));
                 CleanupTables();
             }
         }
@@ -152,14 +127,14 @@ namespace TagDatabaseTester {
         [Fact]
         public void CreateAndRenameTag() { // rename twice, one should have effect , second repeated time we don't know?
             lock (tc) {
-                tc.CreateTag(sampleTags[0]);
-                tc.CreateTag(sampleTags[1]);
+                int id1 = tc.CreateTag(sampleTags[0]);
+                int id2 = tc.CreateTag(sampleTags[1]);
                 tc.CreateTag(sampleTags[2]);
                 tc.CreateTag(sampleTags[3]);
-                Assert.Equal(-1, tc.RenameTag(1, sampleTags[1])); // existing name
-                Assert.Equal(1, tc.RenameTag(1, sampleTags[4])); // new name
-                Assert.Equal(1, tc.RenameTag(1, sampleTags[4])); // unchanged
-                Assert.Equal(-1, tc.RenameTag(2, sampleTags[4])); // violates uniqueness
+                Assert.Equal(-1, tc.RenameTag(id1, sampleTags[1])); // existing name
+                Assert.Equal(1, tc.RenameTag(id1, sampleTags[4])); // new name
+                Assert.Equal(1, tc.RenameTag(id1, sampleTags[4])); // unchanged
+                Assert.Equal(-1, tc.RenameTag(id2, sampleTags[4])); // violates uniqueness
 
                 Assert.Equal(0, tc.RenameTag(sampleTags[4], sampleTags[4])); // we forced it to 0
                 Assert.Equal(-1, tc.RenameTag(sampleTags[2], sampleTags[4])); // does not work
@@ -208,7 +183,7 @@ namespace TagDatabaseTester {
             lock (tc) {
                 AddAllTags();
                 List<string> insertedTags = tc.GetAllTagsAsStrings();
-                List<Tag> insertedTagsAsTags = tc.GetAllTags();
+                List<TagDto> insertedTagsAsTags = tc.GetAllTags();
                 insertedTags.Sort();
                 insertedTagsAsTags.Sort();
                 sampleTags.Sort();
